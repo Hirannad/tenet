@@ -1,0 +1,28 @@
+{
+  "name": "tenet",
+  "description": "A commitment ledger for decisions and rules, and the machinery that keeps both from rotting quietly.",
+  "owner": {
+    "name": "József Juhász",
+    "url": "https://github.com/Hirannad"
+  },
+  "plugins": [
+    {
+      "name": "tenet",
+      "source": "./",
+      "description": "Records decisions with the condition that would reverse them, sweeps weekly for conditions that have fired, and audits the instruction layer for rules nothing enforces. Directory-scoped, so a growing knowledge base never floods a session.",
+      "version": "1.0.0",
+      "homepage": "https://github.com/Hirannad/tenet",
+      "license": "MIT",
+      "keywords": [
+        "decisions",
+        "architecture-decision-record",
+        "adr",
+        "claude-md",
+        "instructions",
+        "knowledge",
+        "pkm",
+        "obsidian"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+filters:
+  and:
+    - type == "gotcha"
+    - '!file.name.contains("Template")'
+properties:
+  note.status:
+    displayName: Status
+  note.created:
+    displayName: Created
+  file.name:
+    displayName: Gotcha
+views:
+  - type: table
+    name: All gotchas
+    order:
+      - file.name
+      - status
+      - created
+    sort:
+      - property: created
+        direction: DESC
+  - type: cards
+    name: Cards
+    order:
+      - file.name
+      - created
+    sort:
+      - property: created
+        direction: DESC

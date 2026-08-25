@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# bootstrap.sh — create a vault where there is none.
+#
+# The plugin shipped for a day with no way to make the thing it reads. Every
+# session start printed a repair procedure for a vault that had never existed,
+# and the docs referenced templates/ and _meta/ files that were not in the
+# repository at all. This is that gap closed.
+#
+# Refuses to touch a directory that already holds notes. Creating a vault is
+# cheap; overwriting one is not.
+#
+# Usage: bootstrap.sh [target-directory]
+#        Defaults to BRAIN_VAULT, or ~/Claude/<BRAIN_NAME>.
+set -uo pipefail
+
+. "$(dirname "$0")/lib.sh" || { echo "tenet: cannot source lib.sh next to me — the plugin install is broken."; exit 1; }
+
+TARGET="${1:-$VAULT}"
+TEMPLATE="$(cd "$(dirname "$0")/../../.." && pwd)/vault-template"
+
+[ -d "$TEMPLATE" ] || { printf 'tenet: vault-template/ is missing from the plugin at %s — the install is incomplete.\n' "$TEMPLATE"; exit 1; }
+
+if [ -d "$TARGET" ] && [ -n "$(find "$TARGET" -maxdepth 1 -name '*.md' -print -quit 2>/dev/null)" ]; then
+  printf 'tenet: %s already holds markdown files. Refusing to write over an existing vault.\n' "$TARGET"
+  printf 'If you meant to start a second one, pass a different path: bootstrap.sh /path/to/new-vault\n'
+  exit 1
+fi
+
+mkdir -p "$TARGET" || exit 1
+# -R with a trailing /. copies contents rather than the directory itself, on both
+# BSD and GNU cp.
+cp -R "$TEMPLATE/." "$TARGET/" || exit 1
+# Validating a release means opening vault-template/ in Obsidian, which leaves an
+# .obsidian/ behind every time. It is gitignored, so it never ships — but cp does
+# not read .gitignore, so without this line one person's window layout would seed
+# every vault created on that machine.
+rm -rf "${TARGET:?}/.obsidian"
+mkdir -p "$TARGET/inbox" "$TARGET/raw"
+# Git and most tooling drop empty directories; the vault needs both to exist.
+: > "$TARGET/inbox/.gitkeep"
+: > "$TARGET/raw/.gitkeep"
+
+printf 'tenet: vault created at %s\n\n' "$TARGET"
+# Counted, not asserted. This summary claimed three notes and no views while the
+# template shipped seven views and could have shipped any number of notes; a
+# hardcoded inventory is how a directory goes missing for a release without
+# anything saying so.
+notes=$(find "$TARGET" -maxdepth 1 -name '*.md' ! -name 'README.md' | wc -l | tr -d ' ')
+views=$(find "$TARGET/bases" -name '*.base' 2>/dev/null | wc -l | tr -d ' ')
+printf 'What is there:\n'
+printf '  %s example notes in the root — read them once, then delete them\n' "$notes"
+printf '  templates/ one per note type\n'
+printf '  bases/     %s saved views — the catalogue, since there is no index file\n' "$views"
+printf '  _meta/     bindings, statuses, and the three journals\n\n'
+printf 'Next:\n'
+printf '  1. git init in it if you want the history — the notes are the database, git is the backup\n'
+printf '  2. /tenet:tenet         see what is in scope in the current directory\n'
+printf '  3. /tenet:tenet-capture turn a decision into a draft\n'
+printf '  4. /tenet:tenet-sweep   the weekly pass over revisit conditions\n\n'
+[ "$TARGET" = "$VAULT" ] || printf 'This is not the default path, so set BRAIN_VAULT=%s for the plugin to find it.\n' "$TARGET"

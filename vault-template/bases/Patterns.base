@@ -1,0 +1,32 @@
+filters:
+  and:
+    - type == "pattern"
+    - '!file.name.contains("Template")'
+properties:
+  note.status:
+    displayName: Status
+  note.derived:
+    displayName: Derived from
+  note.created:
+    displayName: Created
+  file.name:
+    displayName: Pattern
+views:
+  - type: table
+    name: All patterns
+    order:
+      - file.name
+      - status
+      - created
+      - derived
+    sort:
+      - property: created
+        direction: DESC
+  - type: cards
+    name: Cards
+    order:
+      - file.name
+      - created
+    sort:
+      - property: created
+        direction: DESC

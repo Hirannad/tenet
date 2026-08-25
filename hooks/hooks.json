@@ -1,0 +1,52 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/skills/tenet/scripts/promote.sh\" || true"
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/skills/tenet/scripts/resolve.sh\" || true"
+          }
+        ]
+      },
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/skills/tenet/scripts/resolve.sh\" || true"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/on-claude-md-edit.sh\"",
+            "timeout": 20,
+            "statusMessage": "Checking CLAUDE.md enforcement coverage..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -d \"${BRAIN_VAULT:-$HOME/Claude/brain}/inbox\" ] && cat \"${CLAUDE_PLUGIN_ROOT}/skills/tenet/references/stop-prompt.md\" || true"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,26 @@
+# Frontmatter exemptions — read by tenet-audit/scripts/frontmatter-check.sh
+# One shell glob per line, relative to the repo root. '*' crosses directories.
+# Everything not listed here must carry title/type/status/updated.
+
+# Claude Code owns this schema (name / description / allowed-tools), not ours.
+# A SKILL.md that carried title/type/status/updated instead would not load.
+skills/*/SKILL.md
+
+# Skill reference files. They are read through a SKILL.md, never on their own, so
+# repo-doc frontmatter would be four lines of noise in every model context that
+# opens one.
+skills/*/references/*.md
+
+# The shipped vault skeleton. These files are copied into a user's vault by
+# bootstrap.sh and then belong to that vault, which has its own frontmatter
+# schema (type/created/status/scope) — not this repository's.
+vault-template/*
+
+# The README is the repository's front door, rendered by GitHub. A frontmatter
+# block would show up as a table above the first heading.
+README.md
+
+# The changelog, rendered by GitHub next to the README. Same reason: a frontmatter
+# block would render as a table above the first heading. Its own header states the
+# schema it does follow — one entry per manifest version bump, no commit hashes.
+CHANGELOG.md

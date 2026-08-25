@@ -1,0 +1,8 @@
+.DS_Store
+# Opening vault-template/ in Obsidian (the human-validation gate) leaves app state behind.
+# It must never ship; bootstrap.sh's cp -R would also copy it into every new vault.
+vault-template/.obsidian/
+
+# The machine-local instruction layer: internal doc pointers and per-machine facts.
+# CLAUDE.md carries only what stays true in a clone.
+CLAUDE.local.md

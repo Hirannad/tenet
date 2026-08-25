@@ -1,0 +1,23 @@
+filters:
+  and:
+    - type == "open"
+    - '!file.name.contains("Template")'
+properties:
+  note.resolves:
+    displayName: Resolves when
+  note.status:
+    displayName: Status
+  note.created:
+    displayName: Parked
+  file.name:
+    displayName: Open question
+views:
+  - type: table
+    name: Open questions
+    order:
+      - file.name
+      - resolves
+      - created
+    sort:
+      - property: created
+        direction: ASC

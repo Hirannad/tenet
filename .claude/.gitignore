@@ -1,0 +1,5 @@
+# settings.local.json is machine-local: permission grants accumulated by the
+# harness on this checkout, meaningless and slightly revealing anywhere else.
+# frontmatter-exempt is the opposite — it is the repo declaring its own shape,
+# and the audit reads it.
+settings.local.json

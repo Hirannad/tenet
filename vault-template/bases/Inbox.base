@@ -1,0 +1,28 @@
+filters:
+  and:
+    - or:
+        - status == "proposed"
+        - status == "unclear"
+    - '!file.name.contains("Template")'
+properties:
+  note.type:
+    displayName: Type
+  note.scope:
+    displayName: Proposed scope
+  note.created:
+    displayName: Drafted
+  file.mtime:
+    displayName: Last touched
+  file.name:
+    displayName: Draft
+views:
+  - type: table
+    name: Oldest first
+    order:
+      - file.name
+      - type
+      - scope
+      - created
+    sort:
+      - property: created
+        direction: ASC

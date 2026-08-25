@@ -1,0 +1,56 @@
+filters:
+  and:
+    - type == "decision"
+    - '!file.name.contains("Template")'
+properties:
+  note.status:
+    displayName: Status
+  note.scope:
+    displayName: Scope
+  note.revisit:
+    displayName: Revisit when
+  note.created:
+    displayName: Created
+  file.name:
+    displayName: Decision
+views:
+  - type: table
+    name: By status
+    groupBy:
+      property: status
+      direction: ASC
+    order:
+      - file.name
+      - scope
+      - created
+      - revisit
+    sort:
+      - property: created
+        direction: DESC
+  - type: table
+    name: Awaiting review
+    filters:
+      and:
+        - or:
+            - status == "proposed"
+            - status == "unclear"
+    order:
+      - file.name
+      - scope
+      - created
+    sort:
+      - property: created
+        direction: DESC
+  - type: table
+    name: Universal layer
+    filters:
+      and:
+        - scope == "universal"
+    order:
+      - file.name
+      - status
+      - created
+      - revisit
+    sort:
+      - property: created
+        direction: DESC

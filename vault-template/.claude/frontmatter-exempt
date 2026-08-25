@@ -1,0 +1,33 @@
+# Frontmatter exemptions — read by tenet-audit/scripts/frontmatter-check.sh
+# One shell glob per line, relative to the repo root. '*' crosses directories.
+# Everything not listed here must carry title/type/status/updated.
+
+# A vault is not a code repository, and it runs a different frontmatter schema on
+# purpose: type/created/status/scope, plus revisit and the link properties. That
+# schema is what promote.sh and resolve.sh read, and it is documented in the tenet
+# skill's references/conventions.md.
+#
+# Without these lines the auditor reports every note in the vault as a defect,
+# which is the false-alarm rate that teaches a reader to skip the digest. The
+# first glob alone covers the whole vault; the rest are here to say which genre
+# each directory holds, so a future reader knows what was deliberate.
+
+# Knowledge notes in the root: type/created/status/scope, no title (the filename
+# is the title) and no updated (git carries that).
+*.md
+
+# Drafts awaiting review, same schema.
+inbox/*
+
+# The vault's own bookkeeping: type + title, no status or updated. These are
+# living files rewritten in place, so an `updated` field would be stale between
+# every edit and the next sweep.
+_meta/*
+
+# Note templates. They carry the schema they are templates for, including the
+# Obsidian {{date}} placeholders, which are not valid values yet.
+templates/*
+
+# Raw source material, kept as received. Its companion `source` note carries the
+# metadata; copying it here would be the duplication raw/ exists to avoid.
+raw/*
