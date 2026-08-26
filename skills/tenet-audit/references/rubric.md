@@ -12,16 +12,20 @@ For each dimension, score toward **full** when all pass-signals hold, toward **z
 What it checks: the file is short enough to stay in effective context, and behavioral **rules** are not tangled with reference **context**.
 
 **Pass signals**
-- ≤200 lines ideal; ≤300 acceptable for a large monorepo root.
+- Under 200 lines. That is the documented target, and adherence drops above it; ≤300 is tolerable only for a large monorepo root.
 - Rules (how to behave) live here; deep context (schemas, full deploy flows, query patterns) is in skills/docs and linked, not inlined.
 - Each section earns its place — no filler.
 
 **Fail signals**
-- >300 lines, or growing append-only with no pruning.
+- >300 lines, or growing append-only with no pruning. (A file over 4 MiB is skipped outright, which is a different and rarer failure — if you ever see one, that is the whole finding.)
 - Schema dumps, long API tables, or tutorial-length prose inlined.
 - Mixed rules + reference in the same section.
 
 Deduct ~5 pts per major overflow (length, or rules/context entanglement).
+
+When the finding **is** length, the fix is a `paths:`-scoped rule under `.claude/rules/`, not an
+`@`-import: an imported file expands at launch and costs the same context it did inline. Recommend
+the import only to remove a duplicate.
 
 ---
 
@@ -70,6 +74,7 @@ What it checks: use of conditional blocks so the model actually applies situatio
 - Situational sections wrapped: `<important if="you are writing or modifying tests">…</important>`.
 - Conditions are **narrow** (fire only when truly relevant).
 - Foundational content (project identity, directory structure, tech stack) left **unwrapped** — it's always relevant.
+- Where a section applies to a *file set* rather than a *task*, a `paths:`-scoped rule in `.claude/rules/` is the stronger form: the harness decides when it loads, instead of the model deciding whether the condition matched.
 
 **Fail signals**
 - Everything flat, no gating, in a long file → sections get ignored.
@@ -103,7 +108,8 @@ What it checks: this file plays well with the other layers. (Scored per file but
 - No rule duplicated from another layer.
 - Any deviation from a global default is **explicitly flagged as an override**.
 - Content matches the layer (personal prefs → global; team rules → project; machine specifics → local).
-- Long shared content `@`-imported, not copy-pasted across files.
+- Content shared across layers `@`-imported once, not copy-pasted (imports deduplicate; they do not shrink).
+- Rules directories (`~/.claude/rules/`, `<repo>/.claude/rules/`) and the managed policy file examined, not assumed absent.
 
 **Fail signals**
 - Global rules restated in a project file (or vice versa).

@@ -71,15 +71,7 @@ valuable and what makes it dangerous: if everything is universal, nothing is sco
 leakage the design prevents comes straight back. Suggest the specific notes that look most
 like project decisions wearing a universal label.
 
-## 7. Hot cache size
-
-`wc -w _meta/hot.md`. Over 500 words, fix it — and there is exactly one correct fix: move the
-detail into `_meta/log.md` and rewrite the cache with present state only.
-
-Never fix it by raising the limit. The 13 KB cache in the reference implementation this design
-learned from grew one reasonable exception at a time.
-
-## 8. Pattern candidates
+## 7. Pattern candidates
 
 Three or more decisions sharing a rationale suggest an undistilled principle.
 
@@ -94,7 +86,7 @@ Three or more decisions sharing a rationale suggest an undistilled principle.
 A pattern records the user's own insight. Authoring one for them — however well — replaces their
 thinking with yours, which is precisely what this vault exists to prevent.
 
-## 9. Topic candidates
+## 8. Topic candidates
 
 Five or more notes sharing a `categories` value with no hub note. Propose:
 
@@ -115,11 +107,21 @@ it is bookkeeping rather than knowledge.
 Topics are meant to emerge from accumulated material rather than be designed up front. This
 check is how that happens. It is a proposal — the user approves the promotion.
 
-## 10. Repeated process deviations
+## 9. Repeated process deviations
 
-Read `_meta/retro.md`. Count entries **two ways**: by the convention they name, and by their error
-class. The class table lives in that file's own header. Two or more on either axis means the rule is
+Corrections are no longer collected here. Claude Code's own auto memory records them as `feedback`
+notes, and duplicating that was the redundancy 2.0.0 removed. This check reads them and does the
+part the platform does not: turns a repeat into a verdict.
+
+`inventory.sh` dumps the `feedback` entries it found, plus `_meta/retro.md`, which remains the log
+of *judgements* — the error-class table and what was decided about each class. Count **two ways**:
+by the rule or convention named, and by error class. Two or more on either axis means the rule is
 not working — writing it down was not enough.
+
+**Read the dump's own status line first.** A missing memory directory, a relocated one, or auto
+memory switched off all produce *no entries*, and none of them mean *no deviations*. If the dump
+says it could not read the record, report that as the finding and stop — do not report a clean
+sweep on a record you never opened.
 
 Counting by class matters because the same habit surfaces on different rules. Three entries naming
 three different conventions can still be one mistake repeated, and per-rule counting hides it.

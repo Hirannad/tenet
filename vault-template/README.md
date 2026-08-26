@@ -17,7 +17,7 @@ plugin somewhere else with `BRAIN_VAULT`.
 |---|---|
 | root | Knowledge notes, flat. `YYYY-MM-DD-short-slug.md` |
 | `inbox/` | Drafts awaiting your review. **Empty is the healthy state** — `promote.sh` empties it as soon as a draft gets a status |
-| `_meta/` | The vault's own bookkeeping: bindings, statuses, the hot cache, the log, the retro |
+| `_meta/` | The vault's own bookkeeping: bindings, statuses, the log, the retro |
 | `templates/` | One per note type |
 | `bases/` | Saved views over the notes — the catalogue. There is no index file, because a hand-written one goes stale. Obsidian reads these; without it they are inert YAML and nothing else changes |
 | `raw/` | Source material that could not be linked instead of copied. Every file here needs a `source` note saying why |
@@ -85,6 +85,6 @@ on their contents.
 
 ## Where the rules live
 
-Conventions, note types and the hot-cache limits are documented in the `tenet` skill's
+Conventions and note types are documented in the `tenet` skill's
 `references/`, not here — that way they travel with the machinery that enforces them rather than
 with the content.

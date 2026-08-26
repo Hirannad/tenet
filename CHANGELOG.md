@@ -7,7 +7,93 @@ manifests. Releases before 1.0.0 carry no git tag; the manifests were the whole 
 
 Dates are release dates.
 
-## 1.0.0 — 2026-08-25
+## 2.0.0 — 2026-08-26
+
+**Breaking: what the platform already does, this no longer does.** Claude Code's auto memory is on
+by default, writes its own notes about your preferences and corrections, and loads a `MEMORY.md`
+index into every session. This plugin had been shipping its own version of that since 0.1.0. Two
+records of the same thing is the drift class the whole tool is about, so the duplicate went — and
+the same pass found something worse than duplication.
+
+- **`_meta/hot.md` and its session-start injection are gone.** A 500-word working-state cache,
+  overwritten rather than appended, injected inside a bound directory — which is, feature for
+  feature, what the native `MEMORY.md` index does, except machine-local and per-repository. Removed
+  from `resolve.sh`, the capture skill's post-approval steps, the sweep's checks, the inventory
+  dump, the vault template and the reference docs. **Your existing `hot.md` is not deleted**: it
+  stays in your vault as an ordinary note that nothing reads any more. Move what still matters into
+  `_meta/log.md`, which is where history was always supposed to live.
+- **The Stop hook's retro half is gone, and the sweep took over its job.** The hook used to ask
+  whether you had enforced a rule by hand this session — which is the native `feedback` memory
+  type, definitionally: *corrections you give Claude and approaches you confirm*. So collection went
+  back to the platform, and the sweep's ninth check now reads `~/.claude/projects/*/memory/` for
+  `feedback` notes and does the part the platform does not: turning a repeat into a verdict, a
+  mechanism that fails when the rule breaks or deleting the rule. This is an upgrade rather than a
+  handover. `_meta/retro.md` was vault-global; native feedback is per-repository, and the check now
+  counts across all of them. Measured on the author's machine while writing this: eleven `feedback`
+  notes across six repositories, one of them named `inferred-tool-behavior-as-fact` — which is,
+  independently arrived at, the same error class `retro.md` had labelled A.
+- **That check can fail loudly now, which took more code than the check itself.** A missing memory
+  directory, one relocated by `autoMemoryDirectory`, and auto memory switched off all produce zero
+  entries and mean three different things; a fourth state, *read it and found no corrections*, is a
+  real zero. All four print a distinct status line, because reporting a clean sweep on a record you
+  never opened is the failure this system exists to prevent. It stays `jq`-free — `jq` is declared
+  as exactly one script's dependency and a second user would make that claim false — so the two
+  settings come out of a `sed` capture, and a settings file that exists but yields nothing says so.
+  Verified against all four branches plus the populated case.
+- **The instruction-layer audit was giving outdated advice, and that is worse than a duplicate.**
+  `references/layer-map.md` is what the audit reads to reason about layers, and it was wrong in four
+  ways at once: it was **missing two layers** — the managed policy `CLAUDE.md`, the one layer no
+  user setting can exclude, and `.claude/rules/` with `paths:` frontmatter, at both user and project
+  scope; it listed `AGENTS.md` as a precedence layer when Claude Code does not read it at all; it
+  framed the stack as *later overrides earlier* when discovered files are concatenated; and its
+  fourth finding type told you to convert long content into an `@`-import, which loads at launch and
+  reduces context by nothing. An audit that cannot see two layers reports a passing grade on files
+  it never opened, so the discovery step now names them and the rule is that an unopened layer is
+  *unexamined*, never clean.
+- **The other four reference docs were measured against the same yardstick.** `rubric.md` anchors
+  its size dimension to the documented target and names path-scoped rules as what actually shortens
+  a file; `rewrite-recipes.md` retitles the import recipe as a de-duplication tool and gains a tenth
+  recipe for the mechanism that genuinely defers cost; `config-hygiene.md`'s memory check resolves
+  `autoMemoryDirectory`, knows the 200-line/25 KB load limit and the `modified` timestamp, and
+  distinguishes *switched off* from *clean*; `enforcement.md` now names hooks as the strongest
+  available answer to "what catches this", which was missing from a document whose entire subject is
+  that question.
+- **Copilot came out entirely — six references across two files.** The plugin's mechanisms are
+  Claude Code mechanisms, and an audit advertising a file it has no opinion about is noise in a
+  description that loads every session. `tenet-audit`'s description lost 54 bytes and gained the two
+  layers that are real. One caveat stated plainly: 0.6.0 established that description changes get a
+  blind trigger test, and **no trigger test was run for this one.**
+- **`bootstrap.sh` was caught by its own release.** Its inventory line claimed "the three journals"
+  under `_meta/`, and removing `hot.md` left two. Two counted numbers sat directly above a hardcoded
+  third — 0.4.0's defect, one line away. It counts now.
+- **Both injection points got cheaper, and one did so while the corpus grew.** Session start went
+  from 11.9 KB at thirty-five universal notes to **8.5 KB at thirty-seven**; the response-end prompt
+  went from 4.2 KB to **3.2 KB**. Measured in a sandbox vault rather than this repository, because
+  the plugin loads twice when the working directory is its own tree and every local figure doubles.
+- **Four known limits are now public issues** rather than sentences in a README — including the one
+  that matters most: a native `DECISIONS.md` was requested in
+  [claude-code#15222](https://github.com/anthropics/claude-code/issues/15222) and the request
+  expired unanswered, auto-closed for inactivity with no position taken. That is the reversal
+  condition for two of these four skills, and it is written down where something will read it back.
+- **Tags are made by `claude plugin tag` from here on, and the naming seam is deliberate.** The
+  harness ships a release-tagging command that refuses on a dirty tree, writes the annotation and
+  pushes — so `v1.0.0` was the last hand-made tag and `tenet--v2.0.0` is the first in the harness's
+  format. Mixed tag list, stated here rather than quietly reconciled.
+  It does **not** subsume `rename-check.sh`'s seventh check, and that was measured rather than
+  assumed: on a sandbox clone with one manifest field broken at a time, the native command caught
+  the `version` mismatch and passed clean on `name`, `license` and `keywords` — all three would have
+  been tagged. The check that exists to catch two hand-kept copies drifting is a superset of the
+  platform's on three of four fields, so it stays. Worth recording as the counter-example to this
+  release's own principle: *ami natív, az nem maradhat* only holds where the native thing actually
+  does the job, and the way to find out is to break it on purpose.
+- **The README stopped claiming something that is no longer true.** It said tools that re-read
+  decision records do not exist. They do now — two of the popular Obsidian systems search past
+  reversals and lint for stale facts, and one of them ships a linter for it. What none of them ask
+  for is the condition, named at decision time, that would make a different choice correct. The
+  comparison table says so with every cell checked against the tools' own templates, and it names
+  where a competitor goes further than this does.
+
+## 1.0.0 — 2026-08-26
 
 First public release. Little of the code moved; what moved is that the repository a stranger
 clones is now the repository the work happens in.

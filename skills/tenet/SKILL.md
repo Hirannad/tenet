@@ -59,7 +59,6 @@ condition has actually been met, or whether the earlier reasoning still holds.
 
 - [Conventions](references/conventions.md) — frontmatter, naming, dates, categories.
 - [Note types](references/note-types.md) — the five types and when each applies.
-- [Hot cache rules](references/hot-cache.md) — the hard limits on `_meta/hot.md`.
 
 ## Related skills
 

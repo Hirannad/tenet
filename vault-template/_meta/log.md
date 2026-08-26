@@ -7,8 +7,10 @@ title: Log
 
 Append-only. Newest entry on top. **One paragraph per session, maximum.**
 
-This is where history lives, so that `hot.md` can stay a short cache instead of growing into a
-changelog. If you catch yourself wanting to add detail to `hot.md`, it belongs here instead.
+This is where history lives. Claude Code's own auto memory already carries a short summary of
+present state, so this file does not repeat it — what it adds is the narrative, in your vault's
+git history rather than machine-local. Keep entries to one paragraph; if one wants to become a
+changelog, it wanted to be a note.
 
 Each entry: the date, what was worked on, and links to the notes it produced.
 

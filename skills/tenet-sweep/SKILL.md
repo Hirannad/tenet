@@ -11,8 +11,8 @@ Vault: `~/Claude/brain` (override with `BRAIN_VAULT`).
 Nothing in this plugin schedules this run. What ships instead is the nag: `promote.sh` reports
 at every session start when the last digest is over a week old, so a forgotten sweep says so
 rather than going quiet. Wire it to a real scheduler yourself if you want one. **It proposes;
-it does not decide.** The only things it may write on its own are `_meta/hot.md` and the
-digest note. Everything else is a suggestion for the user.
+it does not decide.** The only thing it may write on its own is the digest note. Everything
+else is a suggestion for the user.
 
 ```!
 "${CLAUDE_PLUGIN_ROOT}/skills/tenet-sweep/scripts/inventory.sh"
@@ -39,15 +39,16 @@ Run all of them, then write the digest. Detail for each is in
    they are kept.
 6. **Universal layer growth.** If there are more than ~15 `universal` notes, say so. An
    unchecked universal layer recreates the leakage that scoping exists to prevent.
-7. **Hot cache size.** `_meta/hot.md` over 500 words. Fix it by moving detail into
-   `_meta/log.md` — that is the only fix.
-8. **Pattern candidates.** Three or more decisions sharing a rationale suggest an undistilled
+7. **Pattern candidates.** Three or more decisions sharing a rationale suggest an undistilled
    principle. **Propose it as a question, never write the pattern.** A pattern must be the
    user's own insight; drafting one on their behalf breaks the rule the whole vault rests on.
-9. **Topic candidates.** Five or more notes sharing a category with no hub note suggest a topic
+8. **Topic candidates.** Five or more notes sharing a category with no hub note suggest a topic
    worth promoting. Propose the hub and the binding line.
-10. **Repeated process deviations.** Read `_meta/retro.md`. If two or more entries name the same
+9. **Repeated process deviations.** Read the `feedback` entries from Claude Code's auto memory
+    (the inventory dumps them) together with `_meta/retro.md`. If two or more name the same
     convention **or the same error class**, it is not working — writing it down was not enough.
+    If the dump says it could not read the record, that is the finding; no entries is not no
+    deviations.
     Propose one of exactly two outcomes: a mechanism that fails when the rule is broken, or deleting
     the rule. Draft it as a `decision` in `inbox/`, so it reaches the user the same way any other
     decision does. One draft per maintenance run, for the most-repeated rule or class only.
@@ -60,8 +61,8 @@ proposals, no prose padding. Lead with the revisit sweep; that is what the user 
 If everything is clean, say so in two lines. A digest that manufactures work to look useful is
 worse than a short one.
 
-Then, if it is stale, update `_meta/hot.md` — overwrite, 500 words max. There is no index file to
-maintain: the `bases/` views are the catalogue, and a hand-written one would only go stale.
+There is no index file to maintain: the `bases/` views are the catalogue, and a hand-written one
+would only go stale.
 
 ## What this must never do
 

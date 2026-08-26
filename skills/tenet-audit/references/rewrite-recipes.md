@@ -72,9 +72,11 @@ Do **not** wrap project identity, directory structure, or tech stack — those a
 
 ---
 
-## 5. Inlined doc → `@`-import
+## 5. Duplicated doc → `@`-import
 
-Stop duplicating content that lives elsewhere.
+Stop keeping two copies of content that lives elsewhere. Note what this does **not** buy: the
+imported file is expanded at launch, so context cost is unchanged. Reach for this when the same
+text appears in more than one place, never to make a long file shorter — recipe 10 does that.
 
 ```diff
 - ## Testing Guide
@@ -134,6 +136,37 @@ Not a text edit — a relocation. Propose it explicitly:
 > "`~/.claude/CLAUDE.md` contains `pnpm build` and a `src/` structure map — these are project-specific. Recommend moving them to `<repo>/CLAUDE.md` and keeping the global file to personal preferences only."
 
 > "`CLAUDE.local.md` contains the commit-message convention — teammates won't see it (gitignored). Recommend moving it to the committed `<repo>/CLAUDE.md`."
+
+---
+
+## 10. Situational section → path-scoped rule
+
+When a section only matters for some files, move it out of CLAUDE.md entirely. Unlike an import,
+this genuinely defers the cost: the rule enters context when Claude reads a matching file.
+
+```diff
+  # CLAUDE.md
+- ## API handlers
+- - All endpoints must validate input with the shared schema helper
+- - Use the standard error envelope
+- - Every handler needs an OpenAPI comment block
++ (section removed — see .claude/rules/api.md)
+```
+
+```diff
++ # .claude/rules/api.md
++ ---
++ paths:
++   - "src/api/**/*.ts"
++ ---
++ - All endpoints must validate input with the shared schema helper
++ - Use the standard error envelope
++ - Every handler needs an OpenAPI comment block
+```
+
+A rule file with no `paths:` list loads unconditionally, at the same priority as
+`.claude/CLAUDE.md` — so omitting `paths:` moves the text without saving anything. If the rule
+really does apply everywhere, leave it in CLAUDE.md where a human reader looks for it.
 
 ---
 

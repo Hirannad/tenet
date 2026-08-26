@@ -1,11 +1,11 @@
 ---
 name: tenet-audit
-description: Use when auditing, reviewing, iterating on, or improving CLAUDE.md and related instruction files (CLAUDE.local.md, AGENTS.md, copilot-instructions.md) across global and project layers. Use when the user mentions CLAUDE.md audit, instruction-layer review, memory-file cleanup, checking Claude config against best practices, or whether the tool surface (permissions, plugins, skills, MCP servers) has grown.
+description: Use when auditing, reviewing, iterating on, or improving CLAUDE.md and related instruction files (CLAUDE.local.md, .claude/rules/, AGENTS.md, managed policy) across global and project layers. Use when the user mentions CLAUDE.md audit, instruction-layer review, memory-file cleanup, checking Claude config against best practices, or whether the tool surface (permissions, plugins, skills, MCP servers) has grown.
 ---
 
 # CLAUDE.md Auditor
 
-Audits and improves the user's Claude instruction files across **every layer** — global `~/.claude/CLAUDE.md`, project `CLAUDE.md`, `CLAUDE.local.md`, `AGENTS.md`, and `.github/copilot-instructions.md` — against a rubric synthesized from 43 CLAUDE.md files in public repositories. It scores each file, flags cross-layer duplication and undeclared overrides, then proposes surgical fixes you approve before any edit.
+Audits and improves the user's Claude instruction files across **every layer** — the managed policy file, global `~/.claude/CLAUDE.md` and `~/.claude/rules/`, project `CLAUDE.md` and `.claude/rules/`, and `CLAUDE.local.md` — against a rubric synthesized from 43 CLAUDE.md files in public repositories. It scores each file, flags cross-layer duplication and undeclared overrides, then proposes surgical fixes you approve before any edit.
 
 It also measures **tool-surface growth** over time (permissions, plugins, skills, agents, hooks, MCP servers) by diffing eleven surfaces against a baseline you accepted, because that surface grows one justified addition at a time and only a comparison catches it.
 
@@ -23,13 +23,21 @@ Work through these five steps in order. Create a TodoWrite item per step for mul
 
 ### 1. Discover
 Find every instruction file in scope. Use Glob/Read — do not assume paths.
+- Managed policy: macOS `/Library/Application Support/ClaudeCode/CLAUDE.md`, Linux/WSL `/etc/claude-code/CLAUDE.md`, Windows `C:\Program Files\ClaudeCode\CLAUDE.md`; also the `claudeMd` key in `managed-settings.json`
 - Global: `~/.claude/CLAUDE.md` (on Windows: `C:\Users\<user>\.claude\CLAUDE.md`)
-- Project: `<repo>/CLAUDE.md` plus nested/monorepo `**/CLAUDE.md`
+- Global rules: `~/.claude/rules/**/*.md`
+- Project: `<repo>/CLAUDE.md` **or** `<repo>/.claude/CLAUDE.md`, plus nested/monorepo `**/CLAUDE.md`
+- Project rules: `<repo>/.claude/rules/**/*.md` — note which carry `paths:` frontmatter, since those load only when a matching file is read
 - Local: `<repo>/CLAUDE.local.md`
-- Portable: `<repo>/AGENTS.md`
-- Editor: `<repo>/.github/copilot-instructions.md`
+- Portable: `<repo>/AGENTS.md` — **not a layer** (Claude Code does not read it); in scope only as the target of an `@AGENTS.md` import
 
 List what exists. Note line counts (the size dimension needs them).
+
+A layer you did not open is **unexamined, not clean** — say which of the above you could not read
+and why. The rules directories and the managed policy file are the two most often missed, and an
+audit that silently skips them reports a passing grade on a stack it never saw. Run `/context` in
+the session under audit to see which files actually loaded, and check `claudeMdExcludes` across
+settings layers before concluding a present file is in play.
 
 ### 2. Score
 Apply `references/rubric.md` to each file: 7 dimensions, a point score each, a letter grade per file. Read the rubric file before scoring — do not score from memory.
@@ -39,7 +47,9 @@ Apply `references/layer-map.md`. Look for:
 - Same rule duplicated across layers (e.g. a global default repeated in a project file).
 - A project layer that contradicts the global default **without declaring it as an override**.
 - Content sitting in the wrong layer (personal prefs in a repo file; team rules in a personal file).
-- Long content that should be a `@`-import instead of inlined.
+- Situational content that should be a `paths:`-scoped rule in `.claude/rules/`. Do **not** recommend
+  an `@`-import to shrink a file — imports expand at launch and do not reduce context.
+- A layer that went unexamined (see step 1) — reported as such, never folded into a pass.
 
 ### 4. Report
 Output a compact report:

@@ -177,37 +177,6 @@ if [ -n "$topic_files" ]; then
   withheld "$topic_files" "topic"
 fi
 
-# Recent working context is restored inside a bound directory — it is
-# recent-activity shaped, so it does not belong in an unrelated project — and
-# inside the vault itself, which is never an unrelated project: it is the
-# brain's own home. The vault used to be excluded by omission, since it carries
-# no binding of its own — so hot.md stayed silent in exactly the directory where
-# the vault work happens.
-in_vault=0
-case "$CWD" in "$VAULT" | "$VAULT"/*) in_vault=1 ;; esac
-if { [ -n "$topics" ] || [ "$in_vault" -eq 1 ]; } && [ -s "$VAULT/_meta/hot.md" ]; then
-  printf '\n## Recent context\n'
-  # The HTML comments in hot.md are authoring rules for the person editing it — the
-  # word cap, the overwrite-never-append rule — and the sweep skill carries both
-  # already. Injected here they cost 937 bytes of every session inside the vault,
-  # which on a fresh vault is the entire file. Stripped, so the published context
-  # cost is the content and not the scaffolding.
-  sed '/^[[:space:]]*<!--/,/-->/d' "$VAULT/_meta/hot.md"
-
-  # "Active threads" is the one section that says where work stopped, and hot.md
-  # is already printed above — so this line adds no content. It adds the
-  # INSTRUCTION, which is the piece that was missing: a SessionStart hook injects
-  # context, it does not act on it, so the section sat in front of the model and
-  # nothing offered it. Same shape as the inbox line below, which has worked for
-  # exactly this reason. Counts unindented lines, so HTML comments and a blank
-  # section stay silent — a fresh vault says nothing.
-  threads=$(awk '/^## Active threads/{f=1;next} /^## /{f=0} f' "$VAULT/_meta/hot.md" 2>/dev/null |
-    grep -cE '^[^[:space:]<]' || true)
-  if [ "${threads:-0}" -gt 0 ]; then
-    printf '\n%s open thread(s) under "Active threads" above. If the user opens without a specific task, name the first one and ask whether to pick it up.\n' "$threads"
-  fi
-fi
-
 pending=$(find "$VAULT/inbox" -maxdepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ')
 if [ "${pending:-0}" -gt 0 ]; then
   printf '\n%s draft(s) awaiting review in inbox/. Run /tenet:tenet-capture to review them.\n' "$pending"

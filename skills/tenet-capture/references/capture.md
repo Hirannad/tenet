@@ -146,6 +146,5 @@ smooth it over — link them and name the conflict. Either the old decision need
 1. `status: accepted`. **Do not move the file** — `scripts/promote.sh` does that off the SessionStart
    hook, so promotion cannot be forgotten the way it was between 2026-07-26 and 07-28.
 2. One paragraph appended to `_meta/log.md`, newest on top.
-3. `_meta/hot.md` rewritten: overwrite, 500 words max, verified with `wc -w`. Never append.
 
 There is no index file. The `bases/` views are the catalogue; a hand-written one only goes stale.

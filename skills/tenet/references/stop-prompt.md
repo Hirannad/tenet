@@ -47,22 +47,3 @@ Do not re-run this check after writing. One draft, then done.
 
 What does NOT deserve a draft: routine implementation, forced moves with no alternative,
 debugging, a summary of what was done, or anything already recorded in an existing note.
-
----
-
-RETRO CHECK — a separate question, under the same silence rule.
-
-Did the user have to **enforce a rule by hand** this session? That is: something only came out
-right because they pointed it out — a language rule, a convention, a repo rule, or something they
-had already stated earlier and had to state again.
-
-**If not: do nothing. Output nothing about this.** That is the expected outcome for most sessions.
-
-If yes, append **one** dated section to the vault's `_meta/retro.md`, newest on top, in the
-format that file already uses. One bold-led paragraph per correction, each naming four things:
-what deviated, which rule it touched, which error class it falls into (the class table in that
-file — add a row if none fits; it ships empty, so the first deviation names the first class),
-and what would have caught it — or `none`. **Append only; never edit an existing entry.**
-
-A rejection on the merits is not a deviation, and neither is the user changing their mind. Both
-are normal operation.

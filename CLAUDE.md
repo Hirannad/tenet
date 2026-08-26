@@ -18,8 +18,9 @@ both names and the vault path — never hardcode either elsewhere.
 - What changed in each release and why: [CHANGELOG.md](CHANGELOG.md), and then the commit body
   behind the version you care about. Those bodies are written as narrative decision records —
   read the one that decided a thing before re-deciding it.
-- Live working state (open threads) arrives via the plugin's own SessionStart hook from the
-  vault's `hot.md`. This file carries only stable facts, by design.
+- Live working state is deliberately **not** here. It arrives from Claude Code's own auto memory
+  (`~/.claude/projects/<project>/memory/`), which this plugin stopped duplicating in 2.0.0. This
+  file carries only stable facts, by design.
 
 ## Working agreements
 
@@ -31,6 +32,16 @@ both names and the vault path — never hardcode either elsewhere.
   manager reads, but a published repository needs a revision a person can check out by name.
   Nothing before 1.0.0 is tagged, and the CHANGELOG is keyed by version rather than by commit
   for the same reason — a version survives a repository move, a hash does not.
+- **Create the tag with `claude plugin tag --push`**, from 2.0.0 on. It refuses on a dirty tree,
+  writes the annotation, and pushes. The naming convention changed with it: `v1.0.0` was made by
+  hand, everything from `tenet--v2.0.0` is the harness's format, so the tag list is mixed by
+  design and the CHANGELOG says where the seam is.
+  **It does not replace `rename-check.sh` check 7**, and this was measured rather than assumed
+  (2026-08-26, sandbox clone, one field broken at a time): the native command validates the
+  **version** field only. A `name`, `license` or `keywords` mismatch between the two manifests
+  passes it clean and would have been tagged. Check 7 covers all four, so it is a superset on
+  three of them — run both, and do not delete the check on the assumption that the platform now
+  owns it.
 - **Before any release or rename**, run `bash skills/tenet/scripts/rename-check.sh`. Seven
   checks, and the seventh is not about renaming at all: it compares `plugin.json` against
   `marketplace.json` on name, version, license and keywords, because two hand-kept copies of

@@ -53,7 +53,6 @@ done
 echo "Universal notes (excl. gotchas): $universal"
 echo "Gotchas: $gotchas"
 echo "Raw files: $(find raw -maxdepth 1 -type f ! -name '.gitkeep' 2>/dev/null | wc -l | tr -d ' ')"
-echo "hot.md words: $(wc -w < _meta/hot.md 2>/dev/null | tr -d ' ')"
 echo
 
 echo "--- decisions with a revisit condition ---"
@@ -122,6 +121,73 @@ grep -ohE '\[\[[^]]+\]\]' *.md _meta/*.md inbox/*.md 2>/dev/null | tr -d '[]' | 
   | while read -r t; do
       [ -f "$t.md" ] || [ -f "_meta/$t.md" ] || [ -f "inbox/$t.md" ] || echo "  $t"
     done
+echo
+
+echo "--- process deviations (native auto memory, type: feedback) ---"
+# The plugin stopped collecting corrections itself in 2.0.0: Claude Code's auto memory
+# already records them as `feedback` notes, and two records of the same thing is the
+# redundancy this release removed. What is left here is the half the platform does not
+# do — turning a repeat into a verdict (check 9).
+#
+# Every branch below prints a status line, because each way of finding nothing looks
+# identical in the output and means something different. A disabled memory, a relocated
+# directory read at the wrong path, and a genuinely clean record all yield zero entries;
+# reporting "no deviations" for the first two is the silent zero this system bans.
+#
+# jq is deliberately not used: it is declared as exactly one script's dependency
+# (surface-check.sh), and a second one would falsify the README. So the two settings are
+# read with a sed capture, and a settings file that exists but yields nothing says so.
+CDIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+SETTINGS="$CDIR/settings.json"
+mem_root=""
+mem_note=""
+
+if [ -n "${CLAUDE_CODE_DISABLE_AUTO_MEMORY:-}" ]; then
+  echo "  status: auto memory is off (CLAUDE_CODE_DISABLE_AUTO_MEMORY is set). Nothing was read —"
+  echo "          that is not the same as no deviations. Check 9 has no input this run."
+elif [ ! -r "$SETTINGS" ]; then
+  mem_root="$CDIR/projects"
+  mem_note="no readable $SETTINGS, so a relocated directory could not be ruled out"
+else
+  if sed -n 's/.*"autoMemoryEnabled"[[:space:]]*:[[:space:]]*false.*/off/p' "$SETTINGS" | grep -q off; then
+    echo "  status: auto memory is off (autoMemoryEnabled false in $SETTINGS). Nothing was read —"
+    echo "          that is not the same as no deviations. Check 9 has no input this run."
+  else
+    custom=$(sed -n 's/.*"autoMemoryDirectory"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$SETTINGS" | head -n 1)
+    case "$custom" in
+      "~/"*) mem_root="$HOME/${custom#\~/}"; mem_note="relocated by autoMemoryDirectory" ;;
+      "")    mem_root="$CDIR/projects" ;;
+      *)     mem_root="$custom"; mem_note="relocated by autoMemoryDirectory" ;;
+    esac
+  fi
+fi
+
+if [ -n "$mem_root" ]; then
+  if [ ! -d "$mem_root" ]; then
+    echo "  status: nothing at $mem_root${mem_note:+ ($mem_note)} — no record to read, which is not"
+    echo "          the same as a clean record. Check 9 has no input this run."
+  else
+    # Recursive on purpose: the per-project layout is <root>/<project>/memory/, but a
+    # relocated root is documented only as "a different location" and may be flat. One
+    # find covers both rather than guessing which, and a guess here reads as zero.
+    fb=$(find "$mem_root" -name '*.md' -type f -exec grep -lE '^[[:space:]]*type:[[:space:]]*feedback' {} + 2>/dev/null | sort)
+    count=$(printf '%s' "$fb" | grep -c . || true)
+    if [ "${count:-0}" -eq 0 ]; then
+      total=$(find "$mem_root" -name '*.md' -type f 2>/dev/null | wc -l | tr -d ' ')
+      echo "  status: $mem_root holds $total memory note(s)${mem_note:+ ($mem_note)}, none of type feedback."
+      echo "          A real zero: the record was read and holds no corrections."
+    else
+      echo "  status: $count feedback note(s) under $mem_root${mem_note:+ ($mem_note)}."
+      echo "          Native auto memory is per-repository, so these span projects by design."
+      printf '%s\n' "$fb" | while IFS= read -r f; do
+        [ -n "$f" ] || continue
+        proj=$(printf '%s' "$f" | sed "s|^$mem_root/||; s|/memory/.*||; s|/[^/]*\.md$||")
+        desc=$(sed -n 's/^description:[[:space:]]*//p' "$f" | head -n 1)
+        printf '  %-34s %-36s %s\n' "${proj:-.}" "$(basename "$f")" "${desc:-(no description)}"
+      done
+    fi
+  fi
+fi
 echo
 
 echo "--- git status ---"

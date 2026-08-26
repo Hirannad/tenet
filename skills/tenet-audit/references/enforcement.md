@@ -51,8 +51,21 @@ cell reading `none` alone is worth almost nothing; `none` plus the reason is the
 
 Three shapes of answer are worth distinguishing, and the example is the third:
 
-- **A real mechanism** — `settings.json` → `permissions.ask` on `Edit(**/package.json)`. Something
-  fails when the rule is broken.
+- **A real mechanism** — something fails when the rule is broken. Three classes, weakest first:
+  - `settings.json` → `permissions.ask` / `permissions.deny` on a tool pattern, e.g.
+    `Edit(**/package.json)`. Client-enforced, and the narrowest to express.
+  - A **hook**. This is the strongest answer available and the most under-used: a `PreToolUse`
+    hook blocks the action regardless of what the model decides, and a `PostToolUse` hook can
+    report after the fact. Where a rule says "always" or "never" and the cell says `none`, a hook
+    is usually the missing row.
+  - A **check that runs and prints a number** — a linter, a test, a script in a `SessionStart`
+    hook. Weaker than blocking, but it makes a violation countable, which is enough to end an
+    argument about whether the rule is being followed.
+
+  The reason this table exists at all is stated by the platform itself: instruction files are
+  delivered as context, not as enforced configuration, and settings and hooks are what the client
+  enforces regardless of what the model decides. A rule living only in prose is therefore a
+  request, and the cell is where you admit which one it is.
 - **`none` — judgement call.** Cannot be mechanised and does not need to be. Most rows.
 - **`none` — mechanisable, not yet built.** The interesting ones. These are the backlog, and
   writing the reason down is what keeps them from reading like the row above.

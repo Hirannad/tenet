@@ -51,7 +51,11 @@ printf 'What is there:\n'
 printf '  %s example notes in the root — read them once, then delete them\n' "$notes"
 printf '  templates/ one per note type\n'
 printf '  bases/     %s saved views — the catalogue, since there is no index file\n' "$views"
-printf '  _meta/     bindings, statuses, and the three journals\n\n'
+# Counted, not asserted, for the same reason as the two counts above: this line
+# claimed "the three journals" for one release after hot.md was removed and left
+# two, which is how a hardcoded manifest goes stale without anything saying so.
+printf '  _meta/     %s bookkeeping file(s) — bindings, statuses, and the journals\n\n' \
+  "$(find "$TARGET/_meta" -maxdepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ')"
 printf 'Next:\n'
 printf '  1. git init in it if you want the history — the notes are the database, git is the backup\n'
 printf '  2. /tenet:tenet         see what is in scope in the current directory\n'

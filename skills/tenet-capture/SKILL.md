@@ -68,8 +68,7 @@ For each draft in `inbox/`:
    SessionStart hook. Nothing here has to remember it.
 5. On `accepted`: rename to a descriptive title if the slug is terse, add wikilinks to related notes
    and to the topic hub if one exists, then append **one paragraph** to `_meta/log.md`, newest on
-   top, and rewrite `_meta/hot.md` — **overwrite, never append**, 500 words maximum, verified with
-   `wc -w`.
+   top.
 6. **On `unclear` or `rejected`-for-form, append a retro entry** to `_meta/retro.md` — what deviated,
    which convention it touched, which error class it falls into, and what would have caught it. That
    file is the process's own record, and the maintenance run reads it for repeats. A note rejected on

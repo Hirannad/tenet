@@ -39,9 +39,16 @@ high-value. Run these on a global/config audit; report findings, fix only on app
 4. **Plugin / MCP over-load** — count enabled global plugins + MCP servers. Flag domain-heavy
    or unused ones loaded globally (they dominate per-session context). Default: enable
    domain tools at the **project** layer, not global.
-5. **Memory-file staleness** — for each memory/`MEMORY.md` entry, check it still matches
-   reality (e.g. a note claiming "global settings.json only has the model" when it now has
-   permissions/hooks). Flag contradictions; memory files are living docs, not snapshots.
+5. **Memory-file staleness** — auto memory lives at `~/.claude/projects/<project>/memory/`,
+   where `<project>` is derived from the git repository; `autoMemoryDirectory` (readable from any
+   settings scope) relocates it, so resolve the path rather than assuming it. For each `MEMORY.md`
+   entry, check it still matches reality (e.g. a note claiming "global settings.json only has the
+   model" when it now has permissions/hooks). Flag contradictions; memory files are living docs,
+   not snapshots. Three specifics worth checking: only the first **200 lines or 25 KB** of
+   `MEMORY.md` load, so anything past that is dead weight that reads as present; a file written by
+   Claude carries a `modified` timestamp in its frontmatter, which dates the claim for you; and if
+   auto memory is off (`autoMemoryEnabled: false`, or `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`) the
+   absence of memories is a **setting, not a clean bill** — say which it was.
 6. **Surface growth** — run `scripts/surface-check.sh` and report the **delta** it prints, not
    today's absolute numbers. See below.
 
