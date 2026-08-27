@@ -1,0 +1,65 @@
+# Three checks that a runner can actually perform, and two deliberate omissions.
+#
+# What is NOT here, and why — because a CI file that looks thorough while running
+# nothing is the failure this whole repository is about:
+#
+#   * `rename-check.sh` greps a wide surface that includes `~/.claude`, the
+#     Obsidian vault registry and a live store. None of those exist on a runner,
+#     so it would grep almost nothing and report clean — a green tick standing in
+#     for a check that never looked. It stays a pre-release step run by a person,
+#     on the machine where those paths are real.
+#   * `claude plugin validate` needs the CLI, and its useful output depends on the
+#     harness version you are actually shipping against. It is in the pre-release
+#     checklist in docs/ARCHITECTURE.md. `--strict` in particular can never be
+#     green here: this repository keeps its own CLAUDE.md at the plugin root on
+#     purpose, and the validator warns about that by design.
+name: checks
+on: [push, pull_request]
+
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Shell syntax, every script
+        run: |
+          fail=0
+          for f in $(find . -name '*.sh' -not -path './.git/*' | sort); do
+            if bash -n "$f"; then echo "ok    $f"; else echo "FAIL  $f"; fail=1; fi
+          done
+          echo "checked $(find . -name '*.sh' -not -path './.git/*' | wc -l) script(s)"
+          exit $fail
+
+      - name: JSON validity, every manifest and hook config
+        run: |
+          for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json hooks/hooks.json; do
+            python3 -c "import json,sys; json.load(open(sys.argv[1])); print('ok   ', sys.argv[1])" "$f"
+          done
+
+      - name: Manifest fields agree
+        # The same four fields rename-check.sh check 7 compares. Duplicated here
+        # rather than reused because that script cannot run on a runner, and the
+        # cost of a version mismatch is a release that sits in the remote while
+        # every installed copy keeps running the code it fixed.
+        run: |
+          python3 - <<'PY'
+          import json, sys
+          p = json.load(open('.claude-plugin/plugin.json'))
+          m = json.load(open('.claude-plugin/marketplace.json'))
+          entries = [e for e in m['plugins'] if e['name'] == p['name']]
+          if not entries:
+              sys.exit(f"no marketplace entry named {p['name']!r} — nothing to compare, which is not a pass")
+          e = entries[0]
+          bad = []
+          for k in ('name', 'version', 'license', 'keywords'):
+              a, b = p.get(k), e.get(k)
+              if a != b:
+                  bad.append(f"  {k}: plugin.json {a!r} vs marketplace.json {b!r}")
+          print(f"compared 4 field(s) on {p['name']} {p['version']}")
+          if bad:
+              sys.exit("MANIFEST DRIFT:\n" + "\n".join(bad))
+          PY
+
+      - name: Frontmatter, every tracked markdown file
+        run: bash skills/tenet-audit/scripts/frontmatter-check.sh .

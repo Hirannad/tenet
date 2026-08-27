@@ -23,7 +23,12 @@
 #   --record          print a baseline for today's counts to stdout, compare nothing
 set -uo pipefail
 
-CDIR="$HOME/.claude"
+# CLAUDE_CONFIG_DIR relocates Claude Code's config tree. Until 2.1.0 this script
+# — the one whose whole job is reading that tree — was pinned to ~/.claude, so on
+# a relocated config dir it reported every JSON surface as unread rather than
+# reading it. ~/.claude.json is deliberately not derived from this: it sits in the
+# home directory rather than inside the config dir.
+CDIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 SETTINGS="$CDIR/settings.json"
 BASELINE="$CDIR/surface-baseline.json"
 MODE="compare"
@@ -52,6 +57,19 @@ enabled_plugin_skills skills_dir_plugins user_scope_mcp"
 # unquoted word splitting does that. Matching against the wrapped form silently
 # reported four measured surfaces as never-measured.
 SURFACE_SET=" $(echo $SURFACES) "
+
+# json_str VALUE — VALUE as a JSON string, quotes included.
+#
+# This script both reads JSON and writes it, and the writing half used to be two
+# different things at once: `keys` went through `jq -R .` and `note` through a
+# bare printf with no escaping at all. One of the note values embeds a plugin key
+# read out of settings.json, so a plugin name containing a quote produced an
+# invalid baseline — from the script whose entire job is that the baseline can be
+# compared later. Same escaping for both now, and it needs no jq, so `--record`
+# still works on a machine that has none.
+json_str() {
+  printf '"%s"' "$(printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')"
+}
 
 # jq_count PATH — the count at a JSON path, or the word `absent` when the key is
 # not there (which is a real zero, not an unread surface), or empty when jq or
@@ -159,14 +177,14 @@ if [ "$MODE" = "record" ]; then
       sep=""
       while IFS= read -r item; do
         [ -n "$item" ] || continue
-        printf '%s%s' "$sep" "$(printf '%s' "$item" | jq -R .)"
+        printf '%s%s' "$sep" "$(json_str "$item")"
         sep=", "
       done <<EOF
 $M_KEYS
 EOF
       printf ']'
     fi
-    [ -n "$M_NOTE" ] && printf ', "note": "%s"' "$M_NOTE"
+    [ -n "$M_NOTE" ] && printf ', "note": %s' "$(json_str "$M_NOTE")"
     printf ' }'
   done
   printf '\n  }\n}\n'

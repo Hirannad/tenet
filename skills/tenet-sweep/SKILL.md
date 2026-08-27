@@ -1,12 +1,12 @@
 ---
 name: tenet-sweep
-description: Weekly housekeeping for the decision brain. Sweeps for decisions whose reversal condition may now be met, plus dead links, orphans, stale drafts, unjustified raw files and an over-grown universal layer, then writes a short digest and proposes fixes without applying them. Use when the user asks for the weekly sweep or vault maintenance, wants to look through or tidy up their own decision notes, asks which recorded conditions may have fired since the last pass, or when a session-start notice says maintenance is overdue. It reviews the notes as a set; it does not search them for a fact.
-allowed-tools: Read, Write, Edit, Grep, Glob
+description: Weekly housekeeping for the decision ledger. Sweeps for decisions whose reversal condition may now be met, plus dead links, orphans, stale drafts, unjustified raw files and an over-grown universal layer, then writes a short digest and proposes fixes without applying them. Use when the user asks for the weekly sweep or vault maintenance, wants to look through or tidy up their own decision notes, asks which recorded conditions may have fired since the last pass, or when a session-start notice says maintenance is overdue. It reviews the notes as a set; it does not search them for a fact.
+allowed-tools: Read, Write, Edit, Grep, Glob, Bash(${CLAUDE_PLUGIN_ROOT}/skills/tenet-sweep/scripts/inventory.sh *)
 ---
 
-# Brain maintenance
+# Ledger maintenance
 
-Vault: `~/Claude/brain` (override with `BRAIN_VAULT`).
+**The ledger's path is printed by the block below** — use that, never an assumed default.
 
 Nothing in this plugin schedules this run. What ships instead is the nag: `promote.sh` reports
 at every session start when the last digest is over a week old, so a forgotten sweep says so

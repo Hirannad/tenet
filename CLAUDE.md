@@ -7,9 +7,11 @@ updated: 2026-08-24
 
 # tenet — repo instructions
 
-The plugin is the machinery; the vault (`~/Claude/brain` by default, a separate repository
+The plugin is the machinery; the store (`~/Claude/ledger` by default, a separate repository
 with its own lifetime) is the content. `skills/tenet/scripts/lib.sh` is the single source for
-both names and the vault path — never hardcode either elsewhere.
+both names and the store path — never hardcode either elsewhere, and `rename-check.sh` check 8
+now enforces that for `hooks/hooks.json` specifically, which cannot source shell and therefore
+had carried an unchecked second copy until 2.1.0.
 
 ## Onboarding
 
@@ -70,8 +72,8 @@ both names and the vault path — never hardcode either elsewhere.
   what it does not. The `CLAUDE.md at the plugin root` warning is expected — this file is the
   repo's own instructions, not shipped context.
 - **Test scripts against a sandbox, never the live vault.** Pattern:
-  `bash skills/tenet/scripts/bootstrap.sh <scratch>/Claude/brain`, then run the other scripts
-  with `BRAIN_VAULT` pointing there.
+  `bash skills/tenet/scripts/bootstrap.sh <scratch>/Claude/ledger`, then run the other scripts
+  with `TENET_LEDGER` pointing there.
 - **No silent zero.** A check that found nothing must be distinguishable from a check that
   looked at nothing (house rule, see the comment at `promote.sh:63`). Apply it to any check you
   add, and to hook wiring too: 0.4.1 closed two violations of exactly this kind — a glob pinned

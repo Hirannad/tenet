@@ -1,13 +1,15 @@
 ---
 name: tenet-capture
-description: Capture this session's decisions into the decision brain, and review drafts waiting in the inbox. Distils what was decided, which options were weighed, what the dilemma was, and what would reverse the choice — then promotes approved drafts into the vault.
+description: Capture this session's decisions into the decision ledger, and review drafts waiting in the inbox. Distils what was decided, which options were weighed, what the dilemma was, and what would reverse the choice. Writes drafts only; a separate mechanical step promotes them once you have given a verdict.
 disable-model-invocation: true
-allowed-tools: Read, Write, Edit, Grep, Glob
+argument-hint: "[review]"
+allowed-tools: Read, Write, Edit, Grep, Glob, Bash(${CLAUDE_PLUGIN_ROOT}/skills/tenet-capture/scripts/inbox.sh *)
 ---
 
-# Capture into the decision brain
+# Capture into the decision ledger
 
-Vault: `~/Claude/brain` (override with `BRAIN_VAULT`). Argument: `$ARGUMENTS`
+Argument: `$ARGUMENTS`. **The ledger's path is printed by the block below** — use that, never an
+assumed default.
 
 Two modes. Pick based on the argument, or on what is actually pending.
 
@@ -73,7 +75,7 @@ For each draft in `inbox/`:
    which convention it touched, which error class it falls into, and what would have caught it. That
    file is the process's own record, and the maintenance run reads it for repeats. A note rejected on
    its *merits* is normal operation and gets no entry. The full intake rule — which also covers any
-   rule the user had to enforce by hand, not just the Brain's own — lives in that file's header.
+   rule the user had to enforce by hand, not just the ledger's own — lives in that file's header.
 
 **On discard:** delete the draft. Say what was discarded so it is not silently lost.
 

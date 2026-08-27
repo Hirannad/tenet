@@ -7,7 +7,7 @@
 #      own table at ~/.claude/enforcement.md. Prints three numbers: unmarked
 #      rules (the defect), orphan rows (the table went stale), empty cells.
 #   2. Table-only mode (--empty-only): any file with an enforcement table, e.g.
-#      the brain vault's conventions.md. Prints just the empty-cell count, or
+#      the ledger vault's conventions.md. Prints just the empty-cell count, or
 #      MISSING when the section has no rows. promote.sh consumes this.
 #
 # Until 2026-08-15 the second target had its own copy of this logic inline in
@@ -24,12 +24,12 @@
 #   --empty-only     table-only mode: print the empty-cell count or MISSING
 set -uo pipefail
 
-CLAUDE_MD="${CLAUDE_MD:-$HOME/.claude/CLAUDE.md}"
+CLAUDE_MD="${CLAUDE_MD:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}/CLAUDE.md}"
 # The table is DATA, and it lives beside the file it describes — the companion to
 # CLAUDE_MD in the same layer, not inside the plugin. references/enforcement.md
 # here documents the format and carries one worked example; it is not anybody's
 # table. Override with ENFORCEMENT_TABLE when the instruction file is elsewhere.
-TABLE="${ENFORCEMENT_TABLE:-$HOME/.claude/enforcement.md}"
+TABLE="${ENFORCEMENT_TABLE:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}/enforcement.md}"
 # Explicitly pointed-at (env var or --table) and default are different states
 # when the file is missing: the first is a table someone HAD, the second may
 # never have existed. The missing-table branch below keys off this.

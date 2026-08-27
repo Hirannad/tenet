@@ -4,17 +4,49 @@
 Both have a reason. Both can go stale without anyone noticing. And both should say what catches
 them when they break.
 
-`tenet` is the machinery for that. It is one system with two entry points: a journal of decisions
-that comes back to you when their assumptions expire, and an audit of the instruction layer that
-counts the rules nothing actually enforces.
+`tenet` is the machinery for that: a journal of decisions that comes back to you when its
+assumptions expire, and an audit of the instruction layer that counts the rules nothing actually
+enforces.
+
+```
+/plugin marketplace add Hirannad/tenet
+/plugin install tenet@tenet
+```
+
+Four commands, and the first one is the whole tour:
+
+| | |
+| :-- | :-- |
+| `/tenet:tenet` | what is in scope here, and what you already decided about it |
+| `/tenet:tenet-capture` | turn this session's decisions into drafts; review pending ones |
+| `/tenet:tenet-sweep` | the weekly pass: which reversal conditions may have fired |
+| `/tenet:tenet-audit` | score `CLAUDE.md`, count unenforced rules, diff the tool surface |
+
+`/tenet:tenet` on a fresh install prints the exact command to create the store, then this — real
+output, from a vault made by that command thirty seconds earlier:
+
+```
+LEDGER: /Users/you/Claude/ledger
+BOUND TOPICS: none (this directory is not bound; topic notes are out of scope)
+
+## Always in scope — methodology, architecture, structure
+- [[2026-01-12-one-decision-per-note]] (decision, accepted) — revisit when: If a note keeps
+  needing a second decision to make sense on its own — then the split is cutting through
+  something that is genuinely one choice, and the cap is doing harm
+- [[2026-02-20-ship-behind-a-flag]] (decision, accepted) — revisit when: If flags outlive their
+  rollouts often enough that reading the code no longer tells you what runs in production —
+  then the flag is the new fork, and it costs more than the branch it replaced
+```
+
+The second half of each line is the point. Not *what* was decided — the condition that would make
+a different choice correct.
 
 This is a personal tool, published as-is. It is what the author runs daily; it is not a product.
-There is no support, no roadmap and no stability promise. If it fits how you work, the install is
-two lines.
+There is no support and no stability promise. If it fits how you work, the install is two lines.
 
 > **Renaming is a supported operation** — see [Renaming](#renaming). Not a courtesy: a folder
 > rename once broke this system for a week without anything noticing, so the path back out is
-> built in and checked.
+> built in and checked. The store itself was renamed in 2.1.0, through that same mechanism.
 
 ## The problem
 
@@ -91,12 +123,7 @@ been pushed to since 2024, so neither has met an agent.
 
 ## Install
 
-```
-/plugin marketplace add Hirannad/tenet
-/plugin install tenet@tenet
-```
-
-To update later:
+The two lines are at the top. To update later:
 
 ```bash
 claude plugin update tenet@tenet
@@ -115,9 +142,11 @@ The first ten minutes, in order:
 2. **Run `/tenet:tenet`.** With no vault yet it prints the exact `bootstrap.sh` command for your
    install. The script's path under the plugin cache carries a version number, so the plugin
    resolves it — a literal command printed here would break on your first update.
-3. **Run that command.** It creates the vault: templates, seven saved views, and three worked
-   example notes. It refuses to write over an existing vault. Default location `~/Claude/brain`;
-   pass a path to put it elsewhere and set `BRAIN_VAULT` to match.
+3. **Run that command.** It creates the store: templates, seven saved views, and three worked
+   example notes. It refuses to write into a directory that already holds markdown, at any depth,
+   or that carries an `.obsidian/`. Default location `~/Claude/ledger` — and there is nothing to
+   configure if you take the default, because the path is a plugin option the installer already
+   asked you for. Pass a different path to `bootstrap.sh` and set the same path in `/plugin`.
 4. **Read the three examples, then delete them.** Two are `universal` and one is `domain`. That
    contrast is the whole scoping model, and it is easier to see than to read about.
 5. **Decide something, then run `/tenet:tenet-capture`.** It writes a draft to `inbox/` and stops.
@@ -125,8 +154,10 @@ The first ten minutes, in order:
 6. **Start your next session.** The draft is promoted mechanically, and what you decided is in
    scope where you decided it.
 
-The tool and its store carry different names on purpose: `tenet` is the machinery, the vault is the
-content, and they are separate directories with separate lifetimes.
+The tool and its store carry different names on purpose: `tenet` is the machinery, the `ledger` is
+the content, and they are separate directories with separate lifetimes. The store's path is a
+typed plugin option (`userConfig`), so Claude Code asks for it at install time and hands it to
+every script — no environment variable to remember, and no default written down in two places.
 
 ## With and without Obsidian
 
@@ -155,11 +186,21 @@ scoped per repository.
 instructions that should only load for matching files. This plugin does not replace them — it
 audits them.
 
-Where it still adds something is the third thing neither covers: a decision, its reasoning, and the
+**Three first-party things now overlap the audit half**, and naming them is more useful than
+waiting to be told. Anthropic ships a `claude-md-management` plugin whose `claude-md-improver` skill
+triggers on very nearly this skill's wording — *check, audit, update, improve, or fix* `CLAUDE.md`.
+`/doctor` proposes trims for a checked-in `CLAUDE.md`, keeping the pitfalls and the rationale.
+`/skill-doctor` reports which loaded skills are unused and what they cost in context, which is
+adjacent to the surface-growth check here. If you want your instruction file *improved*, those are
+first-party and they will stay current with the platform.
+
+Where this still adds something is what none of them do: a decision, its reasoning, and the
 condition that would reverse it, in a store with its own git history rather than a machine-local
-cache. The sweep now reads the native `feedback` memories as its input for repeated process
-deviations, and does the part the platform does not — turning a repeat into a verdict: a mechanism
-that fails when the rule breaks, or deleting the rule.
+cache — plus a score you can compare over time, an enforcement table where every rule names what
+catches it when it breaks, and a diff against a baseline you accepted rather than one that updates
+itself. The sweep reads the native `feedback` memories as its input for repeated process deviations
+and does the part the platform does not: turning a repeat into a verdict, a mechanism that fails
+when the rule breaks or deleting the rule.
 
 ## Privacy
 
@@ -176,11 +217,15 @@ not hiding anything.) The only `git` calls are local reads — `remote get-url`,
 `status` — plus one local `git mv` when an approved draft is promoted.
 
 **No script writes anywhere under `~/.claude`.** The two things that write at all are
-`bootstrap.sh`, which creates your vault, and `promote.sh`, which moves an approved draft from
-`inbox/` to the vault root. Everything else reads.
+`bootstrap.sh`, which creates your store, and `promote.sh`, which moves an approved draft from
+`inbox/` to the store root. Everything else reads. One consequence worth stating: when your store is
+a git repository, `promote.sh` uses `git mv`, so an unattended session start can leave a staged
+rename in a repository you did not touch.
 
-**All state is local files you can read.** The vault is markdown; the baselines and tables are
-files in your home directory that you edit by hand.
+**All state is local files you can read.** The store is markdown; the baselines and tables are
+files in your home directory that you edit by hand. The store's path is the one thing kept in
+Claude Code's own settings, under `pluginConfigs`, because it is a plugin option rather than
+plugin state.
 
 The one thing to know before running it: `rename-check.sh` greps a wide surface and **prints
 matching lines to your terminal**. Read the list in [Renaming](#renaming) first if any of those
@@ -197,30 +242,31 @@ Measured, not estimated, and each one has an issue open rather than a shrug.
 - **Zero `pattern` notes after a month.** The type exists; the agent is forbidden from writing one,
   and the human path to writing one may be too narrow to walk.
   [#2](https://github.com/Hirannad/tenet/issues/2)
-- **`frontmatter-check` scores 2 of 33 files in this repository** (one on a fresh clone). Every
-  exemption is justified, and a check that scores one file is still close to a check that cannot
+- **`frontmatter-check` scores 3 of 33 files in this repository** (two on a fresh clone). Every
+  exemption is justified, and a check that scores two files is still close to a check that cannot
   fail. [#3](https://github.com/Hirannad/tenet/issues/3)
 - **A native `DECISIONS.md` was requested and the request expired unanswered.** What that would
   make redundant, and what it would not.
-  [#4](https://github.com/Hirannad/tenet/issues/4)
+  [#4](https://github.com/Hirannad/tenet/issues/4) — and that issue is written against a condition
+  that has not fired, while three first-party things overlapping the audit half already have. See
+  [what the platform already does](#what-the-platform-already-does).
 - **A locale is six strings**, covering the decision template's headings only. The other four
   templates have fifteen headings between them and no locale string. Only `SECTION_DECISION` is
   matched mechanically, so the gap costs nothing today — but switching locale is a two-step
   operation, and `locales/hu.sh` says so in its own header.
 - **The plugin loads twice if your working directory *is* this repository** — once from the
-  marketplace cache and once from the tree in front of you — so hooks fire twice and every figure
-  below doubles. It affects developing the plugin, not installing it.
+  marketplace cache and once from the tree in front of you — so hooks fire twice and every measured
+  figure doubles. It affects developing the plugin, not installing it.
+- **Whether an injected `!`-block aborts on a machine with no matching permission rule is not
+  established.** The documented behaviour says it should: an injected command never prompts, and
+  anything other than *allow* aborts the invocation. 2.1.0 adds the `allowed-tools` Bash rule that
+  removes the question either way, but the abort was never reproduced — this repository's own
+  settings hold 43 grants and none of them match the injected form, so the local evidence points
+  the other way. Stated rather than quietly fixed.
 
-## Commands
+## Scheduling
 
-| Skill | What it does |
-| :-- | :-- |
-| `/tenet:tenet` | What is in scope here, and what you already decided about it |
-| `/tenet:tenet-capture` | Turn a session's decisions into drafts; review pending ones |
-| `/tenet:tenet-sweep` | The weekly pass: fired reversal conditions, dead links, orphans, an over-grown universal layer |
-| `/tenet:tenet-audit` | Score the instruction layer, find cross-layer duplication, count unenforced rules, diff the tool surface |
-
-Nothing here runs on a timer. The sweep is weekly by convention, and what holds the convention up
+The four commands are tabled at the top. Nothing here runs on a timer. The sweep is weekly by convention, and what holds the convention up
 is one line at session start once the last digest is over a week old. Point `cron`, `launchd` or
 your own scheduler at it if you want more than a nudge.
 
@@ -234,9 +280,10 @@ read those, you do not.
 
 ## Renaming
 
-Names change, and this one already has. `skills/tenet/scripts/lib.sh` holds both name pairs —
-`PLUGIN_NAME` for the machinery and `BRAIN_NAME` for the vault, each with a `_PREVIOUS_NAMES` list.
-Set the new name, append the old one to that list, then run:
+Names change, and this one has twice: the machinery became `tenet` in 0.1.0 and the store became
+`ledger` in 2.1.0. `skills/tenet/scripts/lib.sh` holds both name pairs — `PLUGIN_NAME` for the
+machinery and `VAULT_NAME` for the store, each with a `_PREVIOUS_NAMES` list. Set the new name,
+append the old one to that list, then run:
 
 ```bash
 bash skills/tenet/scripts/rename-check.sh
@@ -247,13 +294,19 @@ case (APFS lies about this, and a case mismatch is how a scheduled run once died
 week), checks that every `SKILL.md` still loads — no shell expansion in a `!`-block, which makes the
 preprocessor reject the block and truncate the skill's body with no error, and no unquoted
 `": "` in the frontmatter, which makes the skill load with no metadata at all — and resolves
-every active binding. The script's own header lists all seven checks.
+every active binding. The script's own header lists all eight checks.
 
-One of the seven is not about renaming: it compares this repository's two manifests on name,
+Two of the eight are not about renaming. One compares this repository's two manifests on name,
 version, license and keywords. `claude plugin update` gates on one of those copies while the
 marketplace advertises the other, and two hand-kept copies of the same facts with nothing
 comparing them is the exact failure this tool is about. Run it before a release for that reason
 alone.
+
+The other is check 8, and it is the same shape one level down: `hooks/hooks.json` must resolve no
+store path of its own. It cannot source `lib.sh`, so anything it names is a second copy of a fact
+`lib.sh` owns — which is what it was until 2.1.0. The fix was not to compare the two copies but to
+delete one: the guard moved into `hooks/on-stop.sh`, which sources `lib.sh` like everything else,
+and check 8 now fails if a path ever reappears in the hook config.
 
 **What it reads.** Run by hand, never from a hook, and it only ever greps — but the surface it
 greps is wide by necessity: `~/.claude/CLAUDE.md`, `~/.claude/settings.json`,
@@ -264,19 +317,35 @@ something you would rather not see echoed to a terminal.
 
 ## Context cost
 
-Three injection points and one always-on cost. Measured at 2.0.0 on 2026-08-26:
+Three injection points and one always-on cost. Every figure below is either printed by
+`claude plugin details tenet` or counted from the shipped files — the previous version of this
+section carried one number that was neither, and it was wrong.
 
 | What | Size | When |
 | :-- | :-- | :-- |
-| three skill descriptions | 1.5 KB | every session, unconditionally — the fourth skill is `disable-model-invocation`, so it costs nothing until you call it |
-| session start: `promote.sh` then `resolve.sh` | 0.8 KB on a fresh vault, 8.5 KB on one whose universal layer lists thirty-seven notes | startup and resume, and `resolve.sh` again after a compaction |
-| response end: the capture prompt | 3.2 KB | every response, gated on the vault's `inbox/` existing — no vault, no cost |
+| four skill descriptions | **~604 tok** total, of which `tenet` ~170, `tenet-sweep` ~200, `tenet-audit` ~140, `tenet-capture` ~90 | every session, unconditionally |
+| session start: `promote.sh` then `resolve.sh` | 0.8 KB on a fresh store, 8.5 KB on one whose universal layer lists thirty-seven notes | startup and resume, and `resolve.sh` again after a compaction |
+| response end: the capture gate | **0.9 KB** | every response, gated on the store's `inbox/` existing — no store, no cost |
 | after every edit: the enforcement hook | nothing | it speaks only when the global `CLAUDE.md` just changed and its table no longer matches |
 
-Both injection points got cheaper in 2.0.0, and the session-start figure did so while the note
-count went *up*: 11.9 KB at thirty-five notes before, 8.5 KB at thirty-seven now. Removing the
-working-state cache is where the difference came from, and the response-end prompt dropped 1.0 KB
-by handing corrections back to the platform's own record.
+**Two corrections to what this section used to say.** Both were found by measuring rather than
+re-reading, which is the only way this kind of error surfaces.
+
+*The fourth skill is not free.* It carries `disable-model-invocation`, and the old table concluded
+from that it "costs nothing until you call it". `claude plugin details` prices it at **~90 tokens
+always-on**: the flag stops Claude choosing the skill, it does not remove the description from the
+listing. Exactly the class of unverified number this tool exists to catch, in its own README.
+
+*The response-end cost was 3.2 KB, and nobody was paying it — because nothing was receiving it.*
+The `Stop` hook wrote its gate to stdout and exited 0, and a `Stop` hook's exit-0 stdout goes to
+the debug log and nowhere else; only `SessionStart`, `UserPromptSubmit` and `UserPromptExpansion`
+have their stdout added to the model's context. So the automatic-drafting path had never run once.
+2.1.0 moves it to `hookSpecificOutput.additionalContext`, which does reach the model, with a
+`stop_hook_active` guard so the injection lands once instead of looping. Measured on 2026-08-27,
+four mechanisms, one probe token each: stdout — not delivered; `systemMessage` — not delivered;
+`additionalContext` — delivered; `additionalContext` with no guard — delivered, then looped to the
+turn limit. The gate itself went 3.2 KB → 0.9 KB in the same change, because the drafting rules it
+carried are needed only once the gate fires and now live in a file the model reads then.
 
 The session-start block is the one that grows: it lists every `universal` note, and its cap
 (`MAX_LIST` in `resolve.sh`) counts lines rather than bytes while each line carries a whole
@@ -286,7 +355,16 @@ roughly fifteen notes, but that is advice rather than a brake.
 
 The descriptions carry a deliberate cost of their own: the sweep's more than doubled at 0.6.0,
 because the short version measurably failed to fire on half the ways a person asks for
-maintenance. A description that does not trigger costs the whole skill.
+maintenance. A description that does not trigger costs the whole skill. The four descriptions total
+1,816 bytes at 2.1.0, up 46 from 2.0.0 — `tenet-capture`'s grew because it had been claiming to
+promote drafts, which its own body forbids.
+
+**These descriptions changed without a trigger test, and that is a stated gap rather than an
+oversight.** 0.6.0 established that a description change gets a blind trigger test; the word
+`brain` left all three model-visible descriptions in 2.1.0 and no test was run, exactly as 2.0.0
+also confessed. The difference is that the mechanism now has a date: `claude plugin eval` with an
+ablation arm is what the next release wires up, which turns that promise into something that can
+fail.
 
 ## Requirements
 
@@ -304,7 +382,7 @@ error — each one is a first-run state that says which state it is:
 
 | Path | Read by | Absent means |
 | :-- | :-- | :-- |
-| `~/Claude/brain` | all of it | no vault yet; `/tenet:tenet` prints the bootstrap command for your install |
+| `~/Claude/ledger` | all of it | no store yet; `/tenet:tenet` prints the bootstrap command for your install |
 | `~/.claude/projects/*/memory/` | the sweep, for `feedback` notes | it says which it was — directory missing, relocated by `autoMemoryDirectory`, or auto memory switched off — because none of those is "no deviations" |
 | `~/.claude/CLAUDE.md` | the audit and its `PostToolUse` hook | nothing to audit |
 | `~/.claude/enforcement.md` | `enforcement-check.sh` | no table yet — it reports how many rules are uncovered, and the hook stays quiet rather than alarming |
@@ -316,14 +394,48 @@ error — each one is a first-run state that says which state it is:
 `rename-check.sh` reads a wider surface still, listed under [Renaming](#renaming) — it is the one
 script you run by hand, and knowing what it greps before you run it is the point.
 
-**Environment variables**, all optional:
+**Where the store's path comes from**, in precedence order. The first is the platform's own
+mechanism and the reason the other three are rarely needed:
+
+| Source | Notes |
+| :-- | :-- |
+| `userConfig` → `CLAUDE_PLUGIN_OPTION_LEDGER` | a typed `directory` option in `plugin.json`. Claude Code asks for it when the plugin is enabled and exports it to every hook process. Change it later in `/plugin` |
+| `TENET_LEDGER` | environment override, for one shell or one run |
+| `BRAIN_VAULT` | the pre-2.1.0 name. **Still works**, so an update cannot silently point you at an empty store; `/tenet:tenet` mentions the new spelling once when it is what resolved the path |
+| `~/Claude/ledger` | the default |
+
+**Other environment variables**, all optional:
 
 | Variable | Overrides |
 | :-- | :-- |
-| `BRAIN_VAULT` | the vault path (`~/Claude/brain`) |
-| `TENET_LOCALE` | the vault's `_meta/locale`, for one run |
+| `TENET_LOCALE` | the store's `_meta/locale`, for one run |
 | `CLAUDE_MD` | the instruction file the audit and its hook read |
 | `ENFORCEMENT_TABLE` | where the enforcement table lives |
+| `CLAUDE_CONFIG_DIR` | Claude Code's config tree. Honoured by every script that reads it since 2.1.0 — before that, by one of five |
+
+## How it is built
+
+Every script, when it runs, what it reads, what it writes, and the two files where shell was the
+wrong choice: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). It names the two directory conventions
+the tree does not — `skills/tenet/scripts/lib.sh` is the library, `skills/tenet-audit/scripts/` is
+the shared checker directory — and the four house rules the code actually implements, each of which
+is there because it was violated first.
+
+## The rubric, on its own
+
+The instruction-layer rubric is the most portable thing here and it needs no install:
+[skills/tenet-audit/references/rubric.md](skills/tenet-audit/references/rubric.md). Seven
+dimensions, 100 points, synthesised in 2026-08 from 43 `CLAUDE.md` files in public repositories —
+size and scope, mandatory content, writing style, compliance technique, anti-patterns, layer
+hygiene, freshness. Read it against your own file and you get most of the value of the audit
+without running anything.
+
+It is worth knowing what it is *not*. It scores a file; it does not rewrite one. Anthropic's own
+`claude-md-management` plugin and `/doctor` both propose improvements, and if that is what you want,
+use those — they are first-party and they will stay current with the platform. What this adds
+instead is a number you can compare over time, an enforcement table where every rule names what
+catches it when it breaks, and a diff of eleven tool surfaces against a baseline you accepted. The
+overlap is real and is tracked in [#4](https://github.com/Hirannad/tenet/issues/4).
 
 ## Changelog
 

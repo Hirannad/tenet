@@ -21,13 +21,13 @@ set -uo pipefail
 _lib="$(dirname "$0")/../../tenet/scripts/lib.sh"
 [ -r "$_lib" ] && . "$_lib"
 if [ -z "${VAULT:-}" ]; then
-  echo "BRAIN ERROR: cannot find tenet/scripts/lib.sh — was the tenet skill renamed? Run rename-check.sh."
+  echo "TENET ERROR: cannot find tenet/scripts/lib.sh — was the tenet skill renamed? Run rename-check.sh."
   exit 1
 fi
 V="$VAULT"
 echo "Vault: $V"
 
-brain_vault_check || exit 1
+vault_check || exit 1
 
 drafts=$(find "$V/inbox" -maxdepth 1 -name '*.md' 2>/dev/null | sort)
 n=$(printf '%s' "$drafts" | grep -c . || true)

@@ -18,7 +18,7 @@ ways and one was picked, it is a decision, not a gotcha.
 
 ## What does NOT deserve a note
 
-This list is the difference between a brain and a pile.
+This list is the difference between a ledger and a pile.
 
 - **Routine implementation.** Writing the code that a decision already implied.
 - **Forced moves.** "We used the only library that does this." No alternative, no decision.

@@ -1,14 +1,18 @@
 ---
 name: tenet
-description: Consult the decision brain — a personal journal of architectural, structural and methodological decisions, the reasoning behind them, and the conditions that would reverse them. Use before making or revisiting a design, architecture, tooling or process decision; when the user asks what was decided before, why something is the way it is, or whether a similar problem has already been reasoned through; and when a past decision may need reconsidering. Only surfaces what is in scope for the current directory.
-allowed-tools: Read, Grep, Glob
+description: Consult the decision ledger — a personal journal of architectural, structural and methodological decisions, the reasoning behind them, and the conditions that would reverse them. Use before making or revisiting a design, architecture, tooling or process decision; when the user asks what was decided before, why something is the way it is, or whether a similar problem has already been reasoned through; and when a past decision may need reconsidering. Only surfaces what is in scope for the current directory.
+allowed-tools: Read, Grep, Glob, Bash(${CLAUDE_PLUGIN_ROOT}/skills/tenet/scripts/resolve.sh *), Bash(${CLAUDE_PLUGIN_ROOT}/skills/tenet/scripts/bootstrap.sh *)
 ---
 
-# The decision brain
+# The decision ledger
 
-A vault at `~/Claude/brain` (override with `BRAIN_VAULT`) that records **how decisions were
-made**: the situation, the viable options, the dilemma, the choice, the reasoning, and what
-would reverse it. It is not a source archive and not a task list.
+A vault of markdown files that records **how decisions were made**: the situation, the viable
+options, the dilemma, the choice, the reasoning, and what would reverse it. It is not a source
+archive and not a task list.
+
+**Its path is the `LEDGER:` line in the block below** — never a default you assume. It comes
+from the plugin's own configuration (`/plugin`, or the `TENET_LEDGER` environment variable), so
+any path written here would be a second copy of a fact one place already owns.
 
 ## What is in scope right now
 
@@ -19,7 +23,7 @@ do not try to widen it by searching the vault for unrelated notes.
 "${CLAUDE_PLUGIN_ROOT}/skills/tenet/scripts/resolve.sh" --interactive
 ```
 
-**If that block is empty, the brain has nothing in scope for this directory.** Say so plainly
+**If that block is empty, the ledger has nothing in scope for this directory.** Say so plainly
 and answer from your own knowledge. Do not go hunting through the vault, and do not invent
 notes that were not listed.
 
@@ -42,8 +46,8 @@ Bindings gate what *you* load. They hide nothing from the user inside Obsidian.
 1. **Start from the list above.** It gives titles, types and revisit conditions — enough to
    choose what is worth opening.
 2. **Read only the notes you actually need**, by path in the vault root.
-3. **Always cite.** Reference notes as `[[Note title]]`. If the brain contains the answer,
-   answer from the brain, not from general knowledge — and make clear which you are doing.
+3. **Always cite.** Reference notes as `[[Note title]]`. If the ledger contains the answer,
+   answer from the ledger, not from general knowledge — and make clear which you are doing.
 4. **Surface stale decisions.** If a note's `revisit` condition looks like it may now be met,
    say so. That is the single most valuable thing this system does.
 5. **Never edit the vault from this skill.** Writing is `/tenet:tenet-capture`, and it needs the

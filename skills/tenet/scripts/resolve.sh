@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# resolve.sh — the gate of the decision brain.
+# resolve.sh — the gate of the decision ledger.
 #
-# Prints the slice of the brain that is in scope for the current working
+# Prints the slice of the ledger that is in scope for the current working
 # directory, and nothing else. Two things can be in scope:
 #
 #   1. Universal notes  — methodology / architecture / structure decisions.
@@ -12,22 +12,22 @@
 #                         in _meta/bindings.md.
 #
 # Producing no output is a normal, expected result: an unbound directory with
-# an empty brain is silent. The exit code is always 0 so that hooks never fail.
+# an empty ledger is silent. The exit code is always 0 so that hooks never fail.
 
 set -uo pipefail
 
 # Vault location and the loud existence/case check live in lib.sh — one copy,
 # not four. A missing or case-mismatched vault prints to stdout (which hooks
 # surface; they swallow stderr) instead of vanishing silently.
-. "$(dirname "$0")/lib.sh" || { printf 'BRAIN ERROR: cannot source %s/lib.sh\n' "$(dirname "$0")"; exit 0; }
+. "$(dirname "$0")/lib.sh" || { printf 'TENET ERROR: cannot source %s/lib.sh\n' "$(dirname "$0")"; exit 0; }
 # The SessionStart hooks call this bare and must stay quiet on a fresh install.
 # The tenet skill's `!` block passes --interactive: there a missing vault has to
 # print the bootstrap instructions, because that block is the stranger's first
 # action and it used to be silent exactly when it had the most to say.
 if [ "${1:-}" = "--interactive" ]; then
-  brain_vault_check || exit 0
+  vault_check || exit 0
 else
-  brain_vault_check --quiet-when-absent || exit 0
+  vault_check --quiet-when-absent || exit 0
 fi
 
 CWD="$PWD"
@@ -54,30 +54,26 @@ fm() {
 # Resolve bound topics. Longest matching path prefix wins, so a binding for a
 # specific package beats a binding for the repository root.
 #
-# Expected line format in bindings.md:
-#   - `/absolute/path` → [[Topic A]], [[Topic B]]
+# The parsing lives in lib.sh's read_bindings, because until 2.1.0 this file and
+# rename-check.sh each had their own reading of the same file and they disagreed:
+# this one treated the shipped template's fenced and commented-out format
+# examples as live bindings, so a fresh vault silently bound [[Acme]], [[Billing]]
+# for anyone working under ~/code/acme-api.
 # ---------------------------------------------------------------------------
 topics=""
 best=0
-if [ -f "$BINDINGS" ]; then
-  while IFS= read -r line; do
-    case "$line" in
-      *'`'*'`'*'→'*) ;;
-      *) continue ;;
-    esac
-    path=$(printf '%s\n' "$line" | sed -n 's/.*`\([^`]*\)`.*/\1/p')
-    [ -n "$path" ] || continue
-    case "$path" in "~"*) path="$HOME${path#\~}" ;; esac
-    case "$CWD" in
-      "$path" | "$path"/*)
-        if [ "${#path}" -gt "$best" ]; then
-          best=${#path}
-          topics=$(printf '%s\n' "$line" | sed 's/.*→[[:space:]]*//')
-        fi
-        ;;
-    esac
-  done < "$BINDINGS"
-fi
+while IFS="$(printf '\t')" read -r bpath btopics; do
+  [ -n "$bpath" ] || continue
+  case "$bpath" in "~"*) bpath="$HOME${bpath#\~}" ;; esac
+  case "$CWD" in
+    "$bpath" | "$bpath"/*)
+      if [ "${#bpath}" -gt "$best" ]; then
+        best=${#bpath}
+        topics="$btopics"
+      fi
+      ;;
+  esac
+done < <(read_bindings "$BINDINGS")
 
 # Turn "[[Topic A]], [[Topic B]]" into a regex alternation: Topic A|Topic B
 topic_re=""
@@ -149,7 +145,7 @@ describe() {
   printf '\n'
 }
 
-printf 'BRAIN: %s\n' "$VAULT"
+printf 'LEDGER: %s\n' "$VAULT"
 if [ -n "$topics" ]; then
   printf 'BOUND TOPICS: %s\n' "$topics"
 else

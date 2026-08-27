@@ -7,7 +7,7 @@
 # the point is to fix the table in the same turn, not to prevent the edit.
 set -uo pipefail
 
-TARGET="${CLAUDE_MD:-$HOME/.claude/CLAUDE.md}"
+TARGET="${CLAUDE_MD:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}/CLAUDE.md}"
 # CLAUDE_PLUGIN_ROOT is set for hook commands, so this resolves inside the
 # plugin. The old fallback pointed at ~/.claude/skills/tenet-audit, which never
 # existed — the pre-plugin directory was named claude-md-auditor — so it was
@@ -15,10 +15,21 @@ TARGET="${CLAUDE_MD:-$HOME/.claude/CLAUDE.md}"
 CHECK="${CLAUDE_PLUGIN_ROOT:?CLAUDE_PLUGIN_ROOT unset — this script only runs as a plugin hook}/skills/tenet-audit/scripts/enforcement-check.sh"
 
 payload=$(cat)
-path=$(printf '%s' "$payload" \
-  | sed -n 's/.*"file_path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)
 
-[ "$path" = "$TARGET" ] || exit 0
+# Every file_path in the payload, then ask whether ANY of them is the target.
+# The previous form was a single sed whose leading `.*` is greedy, so on a
+# one-line payload it captured the LAST "file_path" — tool_response's, not
+# tool_input's. Those agree for Edit and Write today, which is why the bug was
+# latent rather than live; asking about the set removes the ordering assumption
+# instead of betting on it. Bound worth naming: a JSON-escaped path (a quote or a
+# \u sequence in a filename) is not decoded here, so it would not match and the
+# check would be skipped.
+if ! printf '%s' "$payload" \
+  | grep -o '"file_path"[[:space:]]*:[[:space:]]*"[^"]*"' \
+  | sed 's/.*"\([^"]*\)"$/\1/' \
+  | grep -qxF "$TARGET"; then
+  exit 0
+fi
 
 # A missing checker used to exit 0 here. That is the shape of failure this whole
 # system exists to catch: the hook stays wired, fires on every edit, and reports

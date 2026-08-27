@@ -8,8 +8,8 @@ title: The vault
 A directory of markdown files. That is the whole storage format — there is no database, no index
 file, and nothing that breaks if you edit a note in any other editor.
 
-`tenet` reads this directory; the two are separate on purpose, with separate lifetimes. Point the
-plugin somewhere else with `BRAIN_VAULT`.
+`tenet` reads this directory; the two are separate on purpose, with separate lifetimes. Its path
+is a plugin option — set it in `/plugin`, or override it for one run with `TENET_LEDGER`.
 
 ## Layout
 
@@ -32,7 +32,7 @@ note here as a defect.
 
 ## Note types
 
-Five, and the boundary between them is what keeps a brain from becoming a pile.
+Five, and the boundary between them is what keeps a ledger from becoming a pile.
 
 - **decision** — the core unit. Context, options, dilemma, choice, why, and what would reverse it.
 - **pattern** — a distilled principle. **Only your own insight qualifies.** Findings handed to you

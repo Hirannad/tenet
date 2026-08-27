@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# promote.sh — the mechanical half of the brain's review loop.
+# promote.sh — the mechanical half of the ledger's review loop.
 #
 # The user reviews decisions and nothing else. Everything that follows from a
 # status change is this script's job, so it can never be forgotten:
@@ -19,10 +19,10 @@ set -uo pipefail
 
 # Vault location and the loud existence/case check live in lib.sh — one copy,
 # not four. Errors go to stdout: the hook swallows stderr.
-. "$(dirname "$0")/lib.sh" || { printf 'BRAIN ERROR: cannot source %s/lib.sh\n' "$(dirname "$0")"; exit 0; }
-brain_vault_check --quiet-when-absent || exit 0
+. "$(dirname "$0")/lib.sh" || { printf 'TENET ERROR: cannot source %s/lib.sh\n' "$(dirname "$0")"; exit 0; }
+vault_check --quiet-when-absent || exit 0
 INBOX="$VAULT/inbox"
-[ -d "$INBOX" ] || { printf 'BRAIN ERROR: inbox/ missing under %s\n' "$VAULT"; exit 0; }
+[ -d "$INBOX" ] || { printf 'TENET ERROR: inbox/ missing under %s\n' "$VAULT"; exit 0; }
 
 VALID="proposed accepted rejected unclear superseded reversed resolved"
 KEEP_IN_INBOX="proposed unclear" # still awaiting the user
@@ -167,7 +167,7 @@ fi
 
 [ -z "$promoted" ] && [ -z "$invalid" ] && [ -z "$toolong" ] && [ -z "$unexpanded" ] && [ -z "$hyphenated" ] && [ "${pending:-0}" -lt 3 ] && [ -z "$stale_maintenance" ] && [ "${unmarked:-0}" -eq 0 ] && [ -z "$missing_table" ] && [ -z "$missing_checker" ] && exit 0
 
-printf 'BRAIN INBOX\n'
+printf 'TENET INBOX\n'
 [ -n "$promoted" ] && printf 'Promoted to the vault root:\n%s' "$promoted"
 [ -n "$invalid" ] && printf 'Needs attention — off-vocabulary status, left in inbox/ (valid: %s):\n%s' "$VALID" "$invalid"
 [ -n "$toolong" ] && printf 'Over the length caps — rewrite or split before asking for a verdict:\n%s' "$toolong"

@@ -39,11 +39,12 @@
     ],
     "Stop": [
       {
-        "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "[ -d \"${BRAIN_VAULT:-$HOME/Claude/brain}/inbox\" ] && cat \"${CLAUDE_PLUGIN_ROOT}/skills/tenet/references/stop-prompt.md\" || true"
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/on-stop.sh\"",
+            "timeout": 15,
+            "statusMessage": "Checking whether this session decided anything..."
           }
         ]
       }

@@ -7,6 +7,136 @@ manifests. Releases before 1.0.0 carry no git tag; the manifests were the whole 
 
 Dates are release dates.
 
+## 2.1.0 — 2026-08-27
+
+**The automatic drafting path had never run once.** The `Stop` hook `cat`-ed its gate to stdout
+and exited 0, and a `Stop` hook's exit-0 stdout goes to the debug log and nowhere else: the
+harness adds plain hook stdout to the model's context for `SessionStart`, `UserPromptSubmit` and
+`UserPromptExpansion`, and for nothing else. So the feature that was supposed to notice a decision
+at the end of a session and offer a draft has been inert since 0.1.0, while `stop-prompt.md`'s
+first line asserted it was injected and the README billed 3.2 KB per response for it. Fourth
+instance of this repository's signature defect — a mechanism wired in, firing on every event,
+structurally unable to do its job — and the largest.
+
+- **Found by measuring, and the measurement decided the fix.** Four candidate mechanisms, one
+  probe token each, in a sandbox session: plain stdout — not delivered. `systemMessage` — not
+  delivered. `hookSpecificOutput.additionalContext` — delivered. `additionalContext` with no
+  re-entry guard — delivered, then re-asked itself until the turn limit. The shipped harness agrees
+  with the docs, in a code path that names those three events and returns nothing for the rest.
+  So: `additionalContext`, with a `stop_hook_active` guard. Verified again end to end through the
+  real hook, with a marker in the gate text, before and after.
+- **The gate went 3.2 KB to 0.9 KB in the same change.** Two thirds of that file was *drafting
+  rules* — needed only once the gate fires, which is rare, and paid for at the end of every
+  response, which is not. They moved to `references/draft-rules.md`, which the gate names by
+  absolute path and the model reads only when it has something to write.
+- **`hooks.json` no longer knows where the store is.** Its inline `Stop` command carried a literal
+  `$HOME/Claude/brain`, because `hooks.json` cannot source `lib.sh` — one fact, two hand-kept
+  copies, nothing comparing them, inside the hook config of the plugin whose whole subject is that
+  failure. The fix was not to compare the copies but to delete one: the guard is now
+  `hooks/on-stop.sh`, which sources `lib.sh` like everything else. **`rename-check.sh` gained an
+  eighth check** that fails if any store-path resolution reappears in `hooks.json` — tested in
+  both directions.
+- **A library warning can no longer be silenced by the caller that needs a clean pipe.** The Stop
+  hook's stdout is now a JSON channel, and `lib.sh` prints at source time. Rather than discard
+  those lines, `lib.sh` collects them in `TENET_LIB_NOTICE` and `TENET_LIB_QUIET=1` suppresses only
+  the printing; `on-stop.sh` prepends them to the injected gate. The first draft of this did
+  discard them, and `vault_check`'s loud path then wrote a repair procedure into the middle of the
+  JSON object — caught by testing the failing direction, which is the only reason it is not in this
+  release.
+
+**The store is called `ledger` now.** The plugin has been `tenet` since 0.1.0 while its store kept
+advertising a different metaphor — in three skill descriptions that load in every session, and in
+a crowded corner of search where `second brain` means something this deliberately is not. The
+README's own first sentence already called it a commitment ledger.
+
+- Six load-bearing sites, and the rename procedure this repository documents is what moved them.
+  `BRAIN_NAME` and `brain_vault_check` became `VAULT_NAME` and `vault_check`; `BRAIN ERROR:` became
+  `TENET ERROR:`; the session-start block's first line is `LEDGER:`.
+- **`BRAIN_VAULT` still resolves**, and that is the point. Renaming the variable is the one
+  genuinely breaking part: a user who exported it and took an update would be told "no store yet"
+  and offered a bootstrap, and accepting would give them a second, empty store beside the real one.
+  So it stays as the third of four sources, and `vault_check` mentions the new spelling once — on
+  the interactive path only, because an unattended run has nobody to read advice and the fallback
+  works.
+- **The three literal paths in the skills are gone entirely rather than updated.** Each skill now
+  says the store's path is whatever its `!`-block printed. The scripts already resolved it
+  correctly; the prose was a fourth copy.
+- Nine of the ten `Claude/brain` references in this repository were live, not history — measured
+  before assuming, because the reverse assumption would have added an exemption to a check that did
+  not need one.
+- One usability defect the rename introduced, and fixed: with `brain` retired on *both* axes, the
+  vault loop and the plugin loop reported the same twenty lines each. One pattern, one owner now.
+- **And one the rename created in the file describing it.** `CHANGELOG.md` is keyed by version and
+  exists to say what each release changed, so this entry has to spell the old name — which made the
+  release gate fire on the paragraph explaining the release. It is now excluded from the stale-name
+  greps for the same stated reason the store's `retro.md` and `log.md` already were: a record is not
+  a reference. `README.md` is deliberately *not* excluded, because it carries paths a reader will
+  copy. Found by running the gate against a simulated fresh clone, which was also the only way it
+  could be found — the working tree carried other findings that masked it.
+
+**The store's path is a plugin option, so a fresh install has nothing to configure.** `userConfig`
+in `plugin.json` declares it as a typed `directory`; Claude Code asks for it when the plugin is
+enabled and exports it to every hook process as `CLAUDE_PLUGIN_OPTION_LEDGER`. `lib.sh` reads four
+sources in precedence order, and "set `BRAIN_VAULT` to match" left the Getting started list.
+
+**The injected `!`-blocks now pre-approve their own scripts.** `${CLAUDE_PLUGIN_ROOT}` is
+substituted inside `allowed-tools` Bash rules as well as in the body, and an injected command whose
+permission check returns anything other than *allow* aborts the whole skill invocation — `Bash`
+defaults to *ask*, and ask is not allow. Whether that abort actually fires on a machine with no
+matching rule is **not established**: this repository's own `settings.local.json` holds 43 grants,
+none of which match the injected form, so the local evidence points the other way and the honest
+answer is that it was not reproduced. The rule is the documented pattern, it costs nothing, and it
+removes the question.
+
+**Three more defects, each measured in the failing direction before the fix and after it.**
+
+- **`bootstrap.sh` could delete a real Obsidian vault's configuration.** Its refusal guard looked
+  for root-level `*.md` only, and the next lines run `rm -rf "$TARGET/.obsidian"` — so a vault
+  keeping every note in subfolders passed the guard and lost its workspace, plugins and settings.
+  `${TARGET:?}` guards the empty string, not the wrong directory. It now refuses on an `.obsidian/`
+  at the target, and on markdown at *any* depth.
+- **`bindings.md` had two parsers and they disagreed.** `rename-check.sh` skipped code fences and
+  HTML comments — the shipped template keeps its format examples in both — and `resolve.sh` did
+  not. So every fresh store bound two phantom topics, one of them `~/code/acme-api`, and the
+  stricter parser could not report it because by its own reading there was nothing there. One
+  parser in `lib.sh` now, and the proof is that it returns nothing for the shipped template and the
+  one real binding for a live one, where the old one returned two phantoms.
+- **`surface-check.sh` wrote invalid JSON when a plugin name contained a quote.** The same function
+  escaped `keys` correctly with `jq -R .` and `note` not at all, and one note value embeds a plugin
+  key read out of `settings.json` — from the script whose entire job is producing a baseline that
+  can be compared later. One escaper for both, and it needs no `jq`, so `--record` now works on a
+  machine without it.
+
+**Smaller, and all of the same class.**
+
+- `lib.sh` **sourced a file whose name came from store content** with no validation: a `_meta/locale`
+  holding `../../../../tmp/x` would have executed `/tmp/x.sh`. Data does not get to choose which
+  code runs.
+- `on-claude-md-edit.sh` extracted `file_path` with a leading greedy `.*`, so on a one-line payload
+  it captured the **last** occurrence — `tool_response`'s, not `tool_input`'s. It now asks whether
+  *any* path in the payload is the target, which removes the ordering assumption rather than betting
+  on it.
+- **`CLAUDE_CONFIG_DIR` is honoured by every script that reads Claude Code's config tree.** It was
+  one of five, and the one that ignored it was `surface-check.sh` — whose entire job is reading that
+  tree, and which therefore reported eleven surfaces as unmeasured on a relocated config dir.
+- **`checks.md` claimed `inventory.sh` dumps `_meta/retro.md`. It does not**, and no script reads
+  that file, `_meta/log.md` or `_meta/statuses.md`. Telling a reader a file has been put in front of
+  them when nothing opened it is worse than the gap it was covering.
+- `tenet-capture`'s description claimed it "promotes approved drafts into the vault", which its own
+  body forbids at step 4 — `promote.sh` owns that.
+
+**The README's Context cost section was wrong about the fourth skill**, and the correction came from
+the platform's own tooling. It concluded that `disable-model-invocation` means the skill "costs
+nothing until you call it"; `claude plugin details` prices it at **~90 tokens always-on**, because
+the flag stops Claude choosing the skill and does not remove its description from the listing.
+Every figure in that section is now either printed by that command or counted from the shipped
+files.
+
+**Stated gap, carried forward deliberately.** The word `brain` left all three model-visible
+descriptions and **no blind trigger test was run** — the same confession 2.0.0 made. The difference
+is that the next release wires up `claude plugin eval` with an ablation arm, which turns 0.6.0's
+promise into something that can fail rather than something that gets re-promised.
+
 ## 2.0.0 — 2026-08-26
 
 **Breaking: what the platform already does, this no longer does.** Claude Code's auto memory is on

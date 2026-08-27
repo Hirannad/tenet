@@ -113,10 +113,15 @@ Corrections are no longer collected here. Claude Code's own auto memory records 
 notes, and duplicating that was the redundancy 2.0.0 removed. This check reads them and does the
 part the platform does not: turns a repeat into a verdict.
 
-`inventory.sh` dumps the `feedback` entries it found, plus `_meta/retro.md`, which remains the log
-of *judgements* — the error-class table and what was decided about each class. Count **two ways**:
-by the rule or convention named, and by error class. Two or more on either axis means the rule is
-not working — writing it down was not enough.
+`inventory.sh` dumps the `feedback` entries it found. It does **not** dump `_meta/retro.md` —
+no script reads that file, or `_meta/log.md`, or `_meta/statuses.md`. This document claimed
+otherwise until 2.1.0, which is worse than a gap: it told you a file had been put in front of you
+when nothing had opened it. Read `_meta/retro.md` yourself with `Read` — it remains the log of
+*judgements*, the error-class table and what was decided about each class, and it is the second
+axis of this count.
+
+Count **two ways**: by the rule or convention named, and by error class. Two or more on either
+axis means the rule is not working — writing it down was not enough.
 
 **Read the dump's own status line first.** A missing memory directory, a relocated one, or auto
 memory switched off all produce *no entries*, and none of them mean *no deviations*. If the dump

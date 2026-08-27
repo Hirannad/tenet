@@ -10,7 +10,7 @@
 # cheap; overwriting one is not.
 #
 # Usage: bootstrap.sh [target-directory]
-#        Defaults to BRAIN_VAULT, or ~/Claude/<BRAIN_NAME>.
+#        Defaults to the configured ledger path, or ~/Claude/<VAULT_NAME>.
 set -uo pipefail
 
 . "$(dirname "$0")/lib.sh" || { echo "tenet: cannot source lib.sh next to me — the plugin install is broken."; exit 1; }
@@ -20,10 +20,23 @@ TEMPLATE="$(cd "$(dirname "$0")/../../.." && pwd)/vault-template"
 
 [ -d "$TEMPLATE" ] || { printf 'tenet: vault-template/ is missing from the plugin at %s — the install is incomplete.\n' "$TEMPLATE"; exit 1; }
 
-if [ -d "$TARGET" ] && [ -n "$(find "$TARGET" -maxdepth 1 -name '*.md' -print -quit 2>/dev/null)" ]; then
-  printf 'tenet: %s already holds markdown files. Refusing to write over an existing vault.\n' "$TARGET"
-  printf 'If you meant to start a second one, pass a different path: bootstrap.sh /path/to/new-vault\n'
-  exit 1
+# Three refusals, because one was not enough. The guard used to look only for
+# root-level *.md — but this script goes on to `rm -rf "$TARGET/.obsidian"` (see
+# below), and an Obsidian vault that keeps every note in subfolders has no
+# root-level markdown at all. Pointed at one, the old guard passed and the next
+# few lines deleted that vault's workspace, plugins and settings. `${TARGET:?}`
+# guards the empty string, not the wrong directory.
+if [ -d "$TARGET" ]; then
+  refusal=""
+  [ -d "$TARGET/.obsidian" ] && refusal="it is already an Obsidian vault (.obsidian/ is there)"
+  if [ -z "$refusal" ] && [ -n "$(find "$TARGET" -name '*.md' -print -quit 2>/dev/null)" ]; then
+    refusal="it already holds markdown files, at some depth"
+  fi
+  if [ -n "$refusal" ]; then
+    printf 'tenet: refusing to write into %s — %s.\n' "$TARGET" "$refusal"
+    printf 'This script creates a vault; it does not merge into one. If you meant to start a second vault, pass a different path: bootstrap.sh /path/to/new-vault\n'
+    exit 1
+  fi
 fi
 
 mkdir -p "$TARGET" || exit 1
@@ -61,4 +74,4 @@ printf '  1. git init in it if you want the history — the notes are the databa
 printf '  2. /tenet:tenet         see what is in scope in the current directory\n'
 printf '  3. /tenet:tenet-capture turn a decision into a draft\n'
 printf '  4. /tenet:tenet-sweep   the weekly pass over revisit conditions\n\n'
-[ "$TARGET" = "$VAULT" ] || printf 'This is not the default path, so set BRAIN_VAULT=%s for the plugin to find it.\n' "$TARGET"
+[ "$TARGET" = "$VAULT" ] || printf 'This is not the default path, so point the plugin at it: set the ledger path in the plugin config (/plugin), or export TENET_LEDGER=%s.\n' "$TARGET"

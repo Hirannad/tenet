@@ -24,11 +24,11 @@ set -uo pipefail
 _lib="$(dirname "$0")/../../tenet/scripts/lib.sh"
 [ -r "$_lib" ] && . "$_lib"
 if [ -z "${VAULT:-}" ]; then
-  echo "BRAIN ERROR: cannot find tenet/scripts/lib.sh — was the tenet skill renamed? Run rename-check.sh."
+  echo "TENET ERROR: cannot find tenet/scripts/lib.sh — was the tenet skill renamed? Run rename-check.sh."
   exit 1
 fi
 V="$VAULT"
-brain_vault_check || exit 1
+vault_check || exit 1
 cd "$V" || exit 1
 
 echo "Vault: $V"

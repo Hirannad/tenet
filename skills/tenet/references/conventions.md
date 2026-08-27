@@ -45,7 +45,7 @@ every type — `revisit` and `resolves` carry the type-specific meaning, not `st
 
 | Status | Meaning | What happens to the note |
 |---|---|---|
-| `proposed` | A draft. Not part of the brain yet. | Stays in `inbox/`, appears in the Inbox view |
+| `proposed` | A draft. Not part of the ledger yet. | Stays in `inbox/`, appears in the Inbox view |
 | `unclear` | The user could not judge it. Not a rejection — the note failed, not the idea. | Stays in `inbox/`, appears in the Inbox view, needs rewriting or splitting |
 | `accepted` | Approved. This is what the user works by. | `promote.sh` moves it to the vault root |
 | `rejected` | Weighed and turned down before it was ever adopted. **Kept** — the reasoning is still worth having. | Vault root, excluded from Revisit |
