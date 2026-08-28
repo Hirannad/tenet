@@ -111,13 +111,13 @@ one, and a separate mechanical step does the promoting so it cannot be forgotten
 
 The popular Obsidian-plus-agent systems solve a different problem well. This table is four
 questions, and most of the "no" answers are not shortcomings — they are different jobs. Star counts
-read live from the GitHub API on 2026-08-26; every other cell was checked by reading the tool's own
+read live from the GitHub API on 2026-08-28; every other cell was checked by reading the tool's own
 templates and command files, not its marketing.
 
 | | records a decision | carries a reversal condition, named when deciding | something reads it back | audits the instruction layer |
 | :-- | :-- | :-- | :-- | :-- |
 | **tenet** | yes | **yes** — the `revisit` field | yes — the weekly sweep judges whether each has fired | yes — rubric, enforcement table, surface diff |
-| [claude-obsidian](https://github.com/AgriciDaniel/claude-obsidian) · 13.2k★ | no — no decision record of any kind | no | its `wiki-lint` re-reads notes for dead links and stale indexes | no |
+| [claude-obsidian](https://github.com/AgriciDaniel/claude-obsidian) · 14.2k★ | no — no decision record of any kind | no | its `wiki-lint` re-reads notes for dead links and stale indexes | no |
 | [obsidian-second-brain](https://github.com/eugeniughelbur/obsidian-second-brain) · 4.2k★ | yes — `/obsidian-decide --formal` writes a Nygard-shaped ADR | no | yes, and well: `/obsidian-challenge` surfaces your own past reversals, and a linter enforces that every fact is timeless, dated, or a pointer | no — it generates a vault `CLAUDE.md`, it does not score one |
 | [obsidian-mind](https://github.com/breferrari/obsidian-mind) · 4.6k★ | yes — a `Decision Record` template with context, options, consequences | no | yes — weekly synthesis and a vault audit | no — its audit covers the vault, not your instruction files |
 | [claude-code#15222](https://github.com/anthropics/claude-code/issues/15222) — a native `DECISIONS.md`, requested | proposed | not in the proposal | proposed | no |
@@ -250,9 +250,9 @@ Measured, not estimated, and each one has an issue open rather than a shrug.
 - **Zero `pattern` notes after a month.** The type exists; the agent is forbidden from writing one,
   and the human path to writing one may be too narrow to walk.
   [#2](https://github.com/Hirannad/tenet/issues/2)
-- **`frontmatter-check` scores 3 of 33 files in this repository** (two on a fresh clone). Every
-  exemption is justified, and a check that scores two files is still close to a check that cannot
-  fail. [#3](https://github.com/Hirannad/tenet/issues/3)
+- **`frontmatter-check` scores 2 of 33 files on a fresh clone** (a third, gitignored file joins in
+  the author's working copy). Every exemption is justified, and a check that scores two files is
+  still close to a check that cannot fail. [#3](https://github.com/Hirannad/tenet/issues/3)
 - **A native `DECISIONS.md` was requested and the request expired unanswered.** What that would
   make redundant, and what it would not.
   [#4](https://github.com/Hirannad/tenet/issues/4) — and that issue is written against a condition

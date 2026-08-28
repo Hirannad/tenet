@@ -7,6 +7,27 @@ manifests. Releases before 1.0.0 carry no git tag; the manifests were the whole 
 
 Dates are release dates.
 
+## 2.2.2 — 2026-08-28
+
+**The README's front door said two numbers its own sources no longer said.** A launch post drives
+readers to exactly two places — the Compared to table and Known limits — and both carried a figure
+that failed the check it sat next to.
+
+- **The Known limits bullet led with the working-copy count while the issue it cites leads with the
+  fresh clone.** `frontmatter-check scores 3 of 33` stood one click from
+  [#3](https://github.com/Hirannad/tenet/issues/3)'s title saying 2 of 33. The parenthetical
+  reconciled them, but a reader checking numbers should not need the parenthetical: the bullet now
+  states the fresh-clone count first, since that is the one a reader can reproduce, and notes the
+  gitignored third file as the working-copy delta.
+- **The star counts were re-read and re-dated.** `claude-obsidian` moved 13.2k → 14.2k in the two
+  days since the table was measured; the other four rows round to the same value they did on
+  2026-08-26. The table's own preamble promises a read date, which is the only reason a two-day-old
+  number was worth a release: a document whose thesis is "every number from a measurement, with a
+  date" does not get to ship a dated number that is wrong on launch day.
+
+No machinery changed. The bump exists because `claude plugin update` reads the version field, not
+the diff — prose corrections that ship without one are invisible to every installed copy.
+
 ## 2.2.1 — 2026-08-28
 
 **A convention whose enforcement cell said `none` with no reason, and then broke.** The rule that a
