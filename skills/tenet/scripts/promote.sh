@@ -113,6 +113,7 @@ pending=$(find "$INBOX" -maxdepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' '
 # and `source-note` since 2026-07-27, and nobody noticed for weeks. Whole vault,
 # not just drafts: that is where the two hid. Silent when clean.
 hyphenated=""
+bad_categories=""
 for f in "$VAULT"/*.md "$VAULT"/inbox/*.md "$VAULT"/raw/*.md "$VAULT"/_meta/*.md "$VAULT"/templates/*.md; do
   [ -f "$f" ] || continue
   head -n 1 "$f" 2>/dev/null | grep -q '^---$' || continue
@@ -121,6 +122,35 @@ for f in "$VAULT"/*.md "$VAULT"/inbox/*.md "$VAULT"/raw/*.md "$VAULT"/_meta/*.md
   for k in $keys; do
     hyphenated="$hyphenated  - ${f#"$VAULT"/} — $k"$'\n'
   done
+
+  # Same loop, second rule: a categories value must be a quoted wikilink, because
+  # [[Methods]] resolves only against ./Methods.md, _meta/Methods.md or
+  # inbox/Methods.md — a bare string resolves against nothing and lands in the
+  # tally as its own one-note category. The enforcement table carried a bare
+  # `none` for this with no reason, which its own preamble calls worth almost
+  # nothing, and on 2026-08-28 a draft arrived with two lowercase Hungarian
+  # strings here and was one review away from the vault root.
+  #
+  # The block scan stops at the closing fence AND at the next top-level key. Both
+  # guards are load-bearing: a categories block that sits last in the frontmatter
+  # ran the scan into the body in inventory.sh until 0.5.0, and every prose
+  # wikilink in the note landed in the result.
+  # templates/ is excluded from THIS rule but not from the one above, and the
+  # split is deliberate. A hyphenated property *name* in a template propagates to
+  # every note made from it, so it belongs in the check. A category *value* in a
+  # template is a placeholder — all five ship `- ""` — and flagging them fired on
+  # five of five on the first run: the false-alarm rate that teaches a reader to
+  # skip the digest. Same reason every .base view excludes templates by filename.
+  case "$f" in "$VAULT"/templates/*) continue ;; esac
+
+  cats=$(sed -n '2,/^---$/p' "$f" 2>/dev/null |
+    awk '/^categories:/{c=1;next} /^---$/{c=0} /^[a-z_]+:/{c=0} c' |
+    grep -E '^[[:space:]]*-' |
+    grep -vE '^[[:space:]]*-[[:space:]]*"\[\[[^]]+\]\]"[[:space:]]*$' || true)
+  while IFS= read -r c; do
+    [ -n "$c" ] || continue
+    bad_categories="$bad_categories  - ${f#"$VAULT"/} — $(printf '%s' "$c" | sed 's/^[[:space:]]*-[[:space:]]*//')"$'\n'
+  done <<<"$cats"
 done
 
 # A convention may enter without a
@@ -165,7 +195,7 @@ elif [ -n "$(find "$last_digest" -mtime +7 2>/dev/null)" ]; then
   stale_maintenance="last run $(basename "$last_digest" .md | sed 's/^maintenance-//')"
 fi
 
-[ -z "$promoted" ] && [ -z "$invalid" ] && [ -z "$toolong" ] && [ -z "$unexpanded" ] && [ -z "$hyphenated" ] && [ "${pending:-0}" -lt 3 ] && [ -z "$stale_maintenance" ] && [ "${unmarked:-0}" -eq 0 ] && [ -z "$missing_table" ] && [ -z "$missing_checker" ] && exit 0
+[ -z "$promoted" ] && [ -z "$invalid" ] && [ -z "$toolong" ] && [ -z "$unexpanded" ] && [ -z "$hyphenated" ] && [ -z "$bad_categories" ] && [ "${pending:-0}" -lt 3 ] && [ -z "$stale_maintenance" ] && [ "${unmarked:-0}" -eq 0 ] && [ -z "$missing_table" ] && [ -z "$missing_checker" ] && exit 0
 
 printf 'TENET INBOX\n'
 [ -n "$promoted" ] && printf 'Promoted to the vault root:\n%s' "$promoted"
@@ -173,6 +203,7 @@ printf 'TENET INBOX\n'
 [ -n "$toolong" ] && printf 'Over the length caps — rewrite or split before asking for a verdict:\n%s' "$toolong"
 [ -n "$unexpanded" ] && printf 'Template placeholder left literal — Obsidian expands these, the agent path does not:\n%s' "$unexpanded"
 [ -n "$hyphenated" ] && printf 'Hyphenated property name(s) — a hyphen parses as subtraction in a .base filter:\n%s' "$hyphenated"
+[ -n "$bad_categories" ] && printf 'Category value(s) that are not a quoted wikilink — these resolve to no hub:\n%s' "$bad_categories"
 [ "${pending:-0}" -ge 3 ] && printf '%s drafts are waiting for review. Run /tenet:tenet-capture review.\n' "$pending"
 [ -n "$stale_maintenance" ] && printf 'Maintenance is due (%s). Run /tenet:tenet-sweep.\n' "$stale_maintenance"
 [ "${unmarked:-0}" -gt 0 ] && printf '%s convention(s) in conventions.md have no enforcement cell. Fill them or write "none" with a reason.\n' "$unmarked"

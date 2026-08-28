@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "tenet",
   "description": "A commitment ledger for decisions and rules. Records what you chose, why, and the condition that would reverse it — then comes back when that condition fires. Every rule carries what catches it when it breaks, or `none` and the reason; a rule with no answer is itself the defect.",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "author": {
     "name": "József Juhász",
     "url": "https://github.com/Hirannad"

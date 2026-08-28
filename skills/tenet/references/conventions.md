@@ -190,7 +190,8 @@ is the third state — a rule nobody ever asked the enforcement question about.
 | A gotcha with two viable paths is a decision | none — judgement call. The gotcha type carries its own reversal condition — below three in half a year, or a two-path entry, kills the type — and `tenet-sweep` check 1 reads that condition against the gotcha count |
 | Universal layer under ~15 notes | `tenet-sweep`, check 6 — weekly, not per session, and gotchas do not count |
 | Titles are descriptive sentences | none — judgement call |
-| Categories are plural | none |
+| Categories are a quoted wikilink | `promote.sh` — whole vault, `templates/` excluded because their values are placeholders |
+| ...and the noun in it is plural | none — the checker verifies the shape, not the word. A singular hub resolves perfectly well and only reads wrong, so this half stays a judgement call |
 | Knowledge notes flat in the vault root | none — `promote.sh` only ever writes to the root, so drift needs a manual move |
 | Notes link to a topic hub | `tenet-sweep`, check 9 — reports categories past five with no hub |
 | Findings are evidence, never a `pattern` | none — judgement call, and the boundary the whole vault rests on |

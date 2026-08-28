@@ -7,6 +7,36 @@ manifests. Releases before 1.0.0 carry no git tag; the manifests were the whole 
 
 Dates are release dates.
 
+## 2.2.1 — 2026-08-28
+
+**A convention whose enforcement cell said `none` with no reason, and then broke.** The rule that a
+`categories` value is a quoted wikilink had sat in the enforcement table as a bare `none` — which
+that table's own preamble calls worth almost nothing, since `none` plus the reason is the whole
+point. On 2026-08-28 a draft arrived carrying two lowercase strings there and was one review away
+from the vault root, where `[[Methods]]` resolves against `./Methods.md` and a bare string resolves
+against nothing.
+
+- **`promote.sh` now checks the shape of every `categories` value**, in the same whole-vault
+  frontmatter loop that already catches hyphenated property names. Silent when clean, one line per
+  offending value when not.
+- **`templates/` is excluded from this rule but not from that loop's other one**, and the split is
+  the point: a hyphenated property *name* in a template propagates into every note made from it, so
+  it belongs in the check, while a category *value* there is a placeholder. All five templates ship
+  `- ""`, so the first run of the unguarded check fired on five of five — the false-alarm rate this
+  repository has twice written down as the thing that teaches a reader to skip the digest. Caught by
+  testing in the failing direction, which is the only reason it is not in this release.
+- **The block scan stops at the closing fence and at the next top-level key.** Both guards are
+  load-bearing: a `categories` block sitting last in the frontmatter ran the scan into the body in
+  `inventory.sh` until 0.5.0, and every prose wikilink in the note landed in the result. Verified
+  against a fixture built for exactly that shape.
+- **The enforcement row is now two rows.** The mechanism covers the shape; the noun being plural
+  stays `none`, with the reason — a singular hub resolves perfectly well and only reads wrong, so
+  that half is a judgement call and is now marked as one rather than lumped in.
+
+Measured against the author's own vault before shipping: zero findings, because the one violation
+had already been fixed by hand during the review that exposed it. That is the state a new check
+should start from — it earns its place on the next occurrence, not on a backlog it invents.
+
 ## 2.2.0 — 2026-08-28
 
 **A fifteen-point rubric dimension had no counter behind it.** `references/rubric.md` scores Layer
