@@ -410,6 +410,16 @@ fail.
 
 ## Requirements
 
+**macOS and Linux.** That is what the author runs daily, and what CI exercises on every push —
+`layer-check.sh` and `frontmatter-check.sh` both run there, not just a syntax pass. **Windows is not
+supported or tested**, WSL included. The machinery is bash, and every hook in `hooks/hooks.json`
+invokes it in shell form, which the harness resolves to Git Bash on Windows or to PowerShell when
+that is absent; the second dies immediately. Supporting it would take three things this repository
+does not have: hooks rewritten to exec form, a `.gitattributes` pinning LF so a `core.autocrlf`
+checkout does not hand bash twelve CRLF scripts, and a measurement on a real Windows machine. Until
+someone does that, this is a decision and not an omission. One Windows path does appear in
+`layer-check.sh`'s managed-policy list — a leftover, not a supported path.
+
 **Bash 3.2 or newer** — the macOS default is enough. This is bash and not `sh`: the scripts use
 process substitution, arrays and here-strings, so a POSIX shell will not run them.
 

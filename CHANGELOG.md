@@ -7,6 +7,41 @@ manifests. Releases before 1.0.0 carry no git tag; the manifests were the whole 
 
 Dates are release dates.
 
+## 2.2.6 — 2026-08-28
+
+**`/tenet:tenet` was reporting an empty ledger instead of failing, and the cause was a file mode.**
+`skills/tenet/SKILL.md` runs `resolve.sh` from a `!`-block as a bare path, which needs the
+executable bit; the file was committed `100644`. A bare invocation exits 126, the block comes back
+empty — and the sentence directly under it tells the model that an empty block means the ledger has
+nothing in scope for this directory, and to say so plainly. So the failure rendered as a legitimate
+zero, in the user's own words, protected by the skill's own instructions. That is the exact defect
+this plugin argues against, in its flagship skill. The two sibling `!`-blocks call `inbox.sh` and
+`inventory.sh`, both `100755`, which is why only this one was affected; and all five hooks in
+`hooks.json` invoke `bash "<path>"` explicitly, so SessionStart kept resolving the ledger and hid
+it. Found while surveying the tree for something else, not by any check.
+
+No mechanism ships with the fix, deliberately. `rename-check.sh` check 3 already opens every
+`!`-block to reject shell expansions, so auditing the mode of a bare script invocation belongs
+beside it as a ninth check — but the fix and the mechanism that would have caught it are separate
+decisions, and bundling them would have made a one-line correction wait on a design.
+
+**The README now names the platforms it runs on, and Windows is not one of them.** The Requirements
+section gave a bash version and left the rest to inference. Measured this session: the harness's own
+hook shell resolution on Windows has open upstream defects; the repository ships no `.gitattributes`,
+so a `core.autocrlf` checkout would hand bash twelve CRLF scripts and kill them at the shebang; and
+`on-claude-md-edit.sh` compares a POSIX `$HOME` path with `grep -qxF` against a `file_path` the
+harness reports with a drive letter and backslashes, so that hook would exit clean without ever
+running its check. Rather than half-fix any of it, the section states macOS and Linux, states that
+Windows is untested, and names the three things that would have to change first — which makes it a
+decision rather than an omission. Linux is claimed on evidence: CI runs `layer-check.sh` with six
+behavioural assertions and `frontmatter-check.sh` over the whole repo on `ubuntu-latest`, not merely
+`bash -n`. Saying "macOS only" would have contradicted the repository's own workflow file, which is
+the drift class checks 7 and 8 exist to catch.
+
+One inconsistency is left standing and named: `layer-check.sh` lists a `C:/Program Files/...` managed
+policy path while the `managed-settings.json` list beside it has no Windows entry. The README calls
+it a leftover rather than pretending it is support.
+
 ## 2.2.5 — 2026-08-28
 
 **The Privacy section is now a submitted privacy policy, and it had two inaccuracies in it.** The
