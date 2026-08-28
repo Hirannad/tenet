@@ -2,7 +2,7 @@
 title: How tenet is built
 type: reference
 status: active
-updated: 2026-08-27
+updated: 2026-08-28
 ---
 
 # How tenet is built
@@ -16,8 +16,10 @@ rather than the product. Nothing here is needed to *use* it.
 
 ## The shape
 
-Four skills, one shared library, three hook events, thirteen shell scripts, 1,849 lines of shell
-against 3,000-odd lines of markdown. No `commands/` directory, because custom commands and skills
+Four skills, one shared library, three hook events, fourteen shell scripts, 2,292 lines of shell
+against 3,598 lines of markdown. (The previous figure said 1,849 for thirteen scripts and was ten
+lines stale — `rename-check.sh` grew by that much when 2.1.0 added its eighth check, and nothing
+recounted. Both numbers here are `grep -c ''` over the tree, and so is the table below.) No `commands/` directory, because custom commands and skills
 are the same mechanism on this platform now and `/tenet:tenet` is the modern form. No agents, no
 MCP server, no network call anywhere.
 
@@ -48,7 +50,8 @@ tenet/
   three callers: the audit skill, the `PostToolUse` hook, and `promote.sh` — which runs it in
   `--empty-only` mode against the *store's* own conventions file. One checker, two targets, which
   is the plugin's thesis applied to itself: a rule and a decision are the same object at two
-  altitudes, so the same check scores both.
+  altitudes, so the same check scores both. `layer-check.sh` joined the directory in 2.2.0 and has
+  one caller, the audit skill's third and fourth steps.
 
 ## When each thing runs
 
@@ -61,7 +64,7 @@ tenet/
 | `/tenet:tenet` | `resolve.sh --interactive` in a `!`-block | injected into the skill body before the model sees it |
 | `/tenet:tenet-capture` | `inbox.sh` in a `!`-block | same |
 | `/tenet:tenet-sweep` | `inventory.sh` in a `!`-block | same |
-| `/tenet:tenet-audit` | `surface-check.sh`, `enforcement-check.sh`, `frontmatter-check.sh` at step 4 | as tool output |
+| `/tenet:tenet-audit` | `layer-check.sh` at step 3; `surface-check.sh`, `enforcement-check.sh`, `frontmatter-check.sh` at step 4 | as tool output |
 | by hand, before a release | `rename-check.sh` | it is for you, not the model |
 | by hand, once | `bootstrap.sh` | prints what it created |
 
@@ -82,20 +85,23 @@ the only script that gates, and the three that are allowed to fail an invocation
 | `skills/tenet/scripts/resolve.sh` | 181 | SessionStart ×2, `/tenet:tenet` | the store root, `_meta/bindings.md` | — | always 0 |
 | `skills/tenet/scripts/promote.sh` | 182 | SessionStart | `inbox/`, `_meta/maintenance-*`, `conventions.md` | **`git mv` inside the store**, `inbox/` → root | always 0 |
 | `skills/tenet/scripts/bootstrap.sh` | 77 | by hand, once | `vault-template/` | **creates the store** | 1 on refusal |
-| `skills/tenet/scripts/rename-check.sh` | 281 | by hand, pre-release | a wide surface incl. `~/.claude` and the Obsidian registry | — | **1 on any finding** |
+| `skills/tenet/scripts/rename-check.sh` | 291 | by hand, pre-release | a wide surface incl. `~/.claude` and the Obsidian registry | — | **1 on any finding** |
 | `skills/tenet-capture/scripts/inbox.sh` | 37 | `/tenet:tenet-capture` | `inbox/`, the store root | — | 1 if the store is unusable |
 | `skills/tenet-sweep/scripts/inventory.sh` | 194 | `/tenet:tenet-sweep` | the whole store, `settings.json`, the auto-memory tree | — | 1 if the store is unusable |
 | `skills/tenet-audit/scripts/enforcement-check.sh` | 129 | audit step 4, PostToolUse hook, `promote.sh` | an instruction file + its enforcement table | — | always 0 |
 | `skills/tenet-audit/scripts/frontmatter-check.sh` | 68 | audit step 4 | every `.md` in a repo, `.claude/frontmatter-exempt` | — | 1 on an undeclared violation |
+| `skills/tenet-audit/scripts/layer-check.sh` | 433 | audit steps 3 and 4 | six instruction layers, `claudeMdExcludes`, the auto-memory tree, a baseline | **never** — `--record` prints to stdout | always 0 |
 | `skills/tenet-audit/scripts/surface-check.sh` | 296 | audit steps 4 and 5 | eleven config surfaces + a baseline | **never** — `--record` prints to stdout | always 0 |
 | `hooks/on-stop.sh` | 82 | Stop | the payload on stdin, `stop-prompt.md` | — | always 0 |
 | `hooks/on-claude-md-edit.sh` | 68 | PostToolUse | the payload on stdin, `enforcement-check.sh` | — | 2 on a mismatch |
 | `locales/hu.sh` | 30 | sourced by `lib.sh` | — | — | n/a |
 
-**Three of them write anything at all.** `bootstrap.sh` creates the store. `promote.sh` moves an
-approved draft out of `inbox/`, with `git mv` when the store is a repo — worth knowing, because an
-unattended `SessionStart` therefore leaves a staged rename in a repository you did not touch. The
-sweep skill may write one digest note. Nothing else writes, and nothing writes under `~/.claude`.
+**Three of the fourteen write anything at all.** `bootstrap.sh` creates the store. `promote.sh`
+moves an approved draft out of `inbox/`, with `git mv` when the store is a repo — worth knowing,
+because an unattended `SessionStart` therefore leaves a staged rename in a repository you did not
+touch. The sweep skill may write one digest note. Nothing else writes, and nothing writes under
+`~/.claude` — the two scripts that produce a baseline both print it to stdout and leave the redirect
+to the user, because a baseline that updates itself erases the signal it exists to produce.
 
 ## Why shell, and where it is the wrong answer
 
@@ -128,7 +134,18 @@ paths, with `case "$rel" in $pat)`, which no other language does more naturally.
   multi-file join for the dead-wikilink check, JSON settings parsing with `sed`, and a
   four-by-three state machine. Same class.
 
-Both are scheduled for rewriting. They are named here rather than left for a reader to notice,
+- **`layer-check.sh` (433 lines) is the largest script in the tree, and it is two things at once.**
+  Its counting and normalization is `awk` — per-line frontmatter, fence and comment tracking, then a
+  string normalizer — and that is shell being used for what shell is good at. Its two *JSON* reads
+  are not: `claudeMdExcludes` and the baseline's `total_directives` both come out of `sed` captures,
+  which is `surface-check.sh`'s defect at one tenth the size. Those two functions belong in the same
+  Python rewrite, and they are the reason the rewrite moved up the list rather than down when this
+  script shipped.
+
+All three are scheduled for rewriting, and `surface-check.sh` first — 2.2.0 identified a check it
+should grow (a permission grant naming an MCP server that no longer exists: the eleven surfaces are
+counted independently and never cross-referenced, so that grant passes today) and adding it in shell
+would mean growing the wrong language. They are named here rather than left for a reader to notice,
 because a repository whose subject is unenforced claims should not have an unstated one.
 
 ## The house rules the code actually implements
@@ -163,6 +180,7 @@ What runs before a release, and what each one covers:
 bash skills/tenet/scripts/rename-check.sh          # 8 checks; exits 1 on any finding
 claude plugin validate .claude-plugin/plugin.json  # pass the PLUGIN manifest, not the repo root
 bash skills/tenet-audit/scripts/frontmatter-check.sh .
+bash skills/tenet-audit/scripts/layer-check.sh .   # 6 layers, budget, duplication, override candidates
 claude plugin details tenet                        # component inventory + projected token cost
 ```
 

@@ -75,6 +75,14 @@ it when broken — or `none` and the reason. A rule with no answer is itself the
 count is a number rather than an assumption. The same check runs against two targets: the vault's
 own conventions and your global `CLAUDE.md`.
 
+**Counts how many instructions are actually competing.** Six layers — managed policy, your
+`CLAUDE.md` and `rules/`, the project's `CLAUDE.md` and `rules/`, and `CLAUDE.local.md` — measured
+against the ~150–200 instructions frontier models reliably follow, of which Claude Code's own system
+prompt already spends about 50. Then the two findings that only show up across layers: a rule
+carried by more than one of them, and a pair that differs only by a negation with nothing declaring
+which wins. Line count cannot see either, which is why the rubric stopped scoring on `wc -l`. A
+layer the check could not open reports as unexamined, never as empty.
+
 **Measures the surface growing behind you.** Permissions, plugins, skills, hooks, MCP servers —
 eleven surfaces diffed against a baseline you recorded and accepted, so you see `18 → 25` with the
 additions named wherever the baseline recorded the items, rather than a bare `25`. It never
@@ -250,6 +258,11 @@ Measured, not estimated, and each one has an issue open rather than a shrug.
   [#4](https://github.com/Hirannad/tenet/issues/4) — and that issue is written against a condition
   that has not fired, while three first-party things overlapping the audit half already have. See
   [what the platform already does](#what-the-platform-already-does).
+- **`layer-check.sh`'s directive count is a proxy, and it undercounts on purpose.** A directive is a
+  list item or a line carrying a normative token, so a paragraph holding three rules counts once and
+  the token list is English — a Hungarian instruction file undercounts unless its rules are
+  bulleted. Both errors point the same way, which is the safe direction for a budget, and the script
+  says so in its own header. What it is not is a token count: `/context` has that.
 - **A locale is six strings**, covering the decision template's headings only. The other four
   templates have fifteen headings between them and no locale string. Only `SECTION_DECISION` is
   matched mechanically, so the gap costs nothing today — but switching locale is a two-step
@@ -323,18 +336,34 @@ section carried one number that was neither, and it was wrong.
 
 | What | Size | When |
 | :-- | :-- | :-- |
-| four skill descriptions | **~604 tok** total, of which `tenet` ~170, `tenet-sweep` ~200, `tenet-audit` ~140, `tenet-capture` ~90 | every session, unconditionally |
+| four skill descriptions | **~622 tok** total, of which `tenet` ~170, `tenet-sweep` ~200, `tenet-audit` ~140, `tenet-capture` ~110 | every session, unconditionally |
 | session start: `promote.sh` then `resolve.sh` | 0.8 KB on a fresh store, 8.5 KB on one whose universal layer lists thirty-seven notes | startup and resume, and `resolve.sh` again after a compaction |
 | response end: the capture gate | **0.9 KB** | every response, gated on the store's `inbox/` existing — no store, no cost |
 | after every edit: the enforcement hook | nothing | it speaks only when the global `CLAUDE.md` just changed and its table no longer matches |
+
+**What is deliberately not in that table**, because it is not an injection: the audit's four scripts
+produce tool output only when you run `/tenet:tenet-audit`. `layer-check.sh`, the one 2.2.0 added, is
+**2.2 KB** on a two-layer machine with no findings and grows with the clusters it reports. Nothing
+about it loads in a session that never calls the audit — and **no skill description changed in
+2.2.0**, so the always-on figure above is the same number it was at 2.1.0.
 
 **Two corrections to what this section used to say.** Both were found by measuring rather than
 re-reading, which is the only way this kind of error surfaces.
 
 *The fourth skill is not free.* It carries `disable-model-invocation`, and the old table concluded
-from that it "costs nothing until you call it". `claude plugin details` prices it at **~90 tokens
+from that it "costs nothing until you call it". `claude plugin details` prices it at **~110 tokens
 always-on**: the flag stops Claude choosing the skill, it does not remove the description from the
 listing. Exactly the class of unverified number this tool exists to catch, in its own README.
+
+*And the total was 18 tokens light, in the section that promises every figure comes from that
+command.* 2.1.0 wrote ~604 with `tenet-capture` at ~90; re-running `claude plugin details tenet`
+against the same installed 2.1.0 on 2026-08-28 prints **~622** with `tenet-capture` at ~110. The
+descriptions did not change, so either the estimator did or the earlier reading was taken before the
+last description edit — and which of those it was cannot be recovered, which is the whole argument
+for re-running the command every release instead of copying the number forward. 2.2.0 changed no
+description, so ~622 is also 2.2.0's figure. The same command prices the on-invoke side, which the
+table above deliberately omits because it is not an injection: `tenet` ~1.1k, `tenet-capture` ~1.8k,
+`tenet-sweep` ~1.4k, `tenet-audit` ~2.8k, each paid only when that skill fires.
 
 *The response-end cost was 3.2 KB, and nobody was paying it — because nothing was receiving it.*
 The `Stop` hook wrote its gate to stdout and exited 0, and a `Stop` hook's exit-0 stdout goes to
@@ -383,8 +412,10 @@ error — each one is a first-run state that says which state it is:
 | Path | Read by | Absent means |
 | :-- | :-- | :-- |
 | `~/Claude/ledger` | all of it | no store yet; `/tenet:tenet` prints the bootstrap command for your install |
-| `~/.claude/projects/*/memory/` | the sweep, for `feedback` notes | it says which it was — directory missing, relocated by `autoMemoryDirectory`, or auto memory switched off — because none of those is "no deviations" |
+| `~/.claude/projects/*/memory/` | the sweep, for `feedback` notes; `layer-check.sh`, for rules duplicated between memory and an instruction file | it says which it was — directory missing, relocated by `autoMemoryDirectory`, or auto memory switched off — because none of those is "no deviations" |
 | `~/.claude/CLAUDE.md` | the audit and its `PostToolUse` hook | nothing to audit |
+| `~/.claude/rules/`, and the managed policy `CLAUDE.md` | `layer-check.sh` | that layer does not exist on this machine — reported as `absent`, which is not a count of zero |
+| `~/.claude/instruction-baseline.json` | `layer-check.sh` | no baseline yet — today's count, plus the command that records one |
 | `~/.claude/enforcement.md` | `enforcement-check.sh` | no table yet — it reports how many rules are uncovered, and the hook stays quiet rather than alarming |
 | `~/.claude/surface-baseline.json` | `surface-check.sh` | no baseline yet — today's counts, plus the command that records them |
 | `~/.claude/settings.json` | `surface-check.sh`, and the sweep for the two auto-memory settings | the JSON surfaces read as unmeasured, never as zero |
@@ -436,6 +467,15 @@ use those — they are first-party and they will stay current with the platform.
 instead is a number you can compare over time, an enforcement table where every rule names what
 catches it when it breaks, and a diff of eleven tool surfaces against a baseline you accepted. The
 overlap is real and is tracked in [#4](https://github.com/Hirannad/tenet/issues/4).
+
+**Three of the rubric's findings are now counted rather than eyeballed**, and the platform has said
+in public which of them it does not do. In
+[claude-code#85477](https://github.com/anthropics/claude-code/issues/85477) a Claude Code
+collaborator answered a request for instruction-layer diagnostics with *"There is no
+instruction-budget warning, duplicate-rule detection, or cross-file conflict detection yet"*.
+`layer-check.sh` does the first two and the mechanical subset of the third; the semantic remainder
+prints as `none` with the reason, because a contradiction with no shared wording is invisible to a
+string comparison and pretending otherwise would make this README the thing it warns about.
 
 ## Changelog
 

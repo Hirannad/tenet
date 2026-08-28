@@ -7,6 +7,127 @@ manifests. Releases before 1.0.0 carry no git tag; the manifests were the whole 
 
 Dates are release dates.
 
+## 2.2.0 — 2026-08-28
+
+**A fifteen-point rubric dimension had no counter behind it.** `references/rubric.md` scores Layer
+hygiene out of 15 and `references/layer-map.md` lists duplication and undeclared overrides as
+cross-layer findings — and the mechanism was one sentence of prose telling the model to *"Build a
+matrix: for each rule, note which layer(s) it lives in."* Nothing counted anything. Fifth instance
+of this repository's signature defect, and the first one found in a *reference document* rather than
+in a script: not a check that could not fail, but a score with nothing to fail against. By this
+repo's own rule a claim that breaks twice gets a mechanism or gets deleted, and deleting a rubric
+dimension because it was inconvenient to measure is the wrong half of that rule.
+
+- **`skills/tenet-audit/scripts/layer-check.sh` is new**, and it is the fourth script in the shared
+  checker directory. Six layers in load order — managed policy, `~/.claude/CLAUDE.md`,
+  `~/.claude/rules/`, the project's `CLAUDE.md` or `.claude/CLAUDE.md`, `.claude/rules/`, and
+  `CLAUDE.local.md` — with **five states per layer, of which one means counted**: `measured`,
+  `absent` (no such layer, which is not a zero), `unreadable`, `excluded` (`claudeMdExcludes` matched
+  it, so the file exists and does not load), `unmeasured`. The layer set comes from
+  `layer-map.md`'s "Load order" block and nowhere else; a second hand-written list is the drift this
+  plugin exists to catch, and it is how an audit comes to report a clean bill on a layer it never
+  opened.
+- **The rubric stopped scoring size on `wc -l`.** Lines measure the file; what degrades adherence is
+  the number of *instructions* competing across every layer at once, and a 190-line file of prose can
+  be cheaper than a 90-line file of dense bullets. Dimension 1 now scores against the measured
+  directive count and the budget line. The budget is borrowed rather than invented — roughly 150–200
+  instructions that frontier models reliably follow, of which Claude Code's own system prompt already
+  spends about 50 — and the script names it as someone else's measurement so a reader can disagree
+  with the number without reading the code.
+- **The directive count is a proxy and the script says so in its own header**, along with both of its
+  limits: one directive per line, so a paragraph carrying three rules counts once; and an English
+  token list, so a Hungarian instruction file undercounts unless its rules are bulleted. Both errors
+  point the same way, which is the safe direction for a budget. A number nobody can define is worse
+  than no number, and the definition belongs next to the code that computes it.
+- **The auto-memory tree is in the duplication scan.** `layer-map.md`'s sixth finding has said since
+  2.0.0 that a `CLAUDE.md` restating accumulated preferences pays for the same content twice, and
+  `inventory.sh` has read `~/.claude/projects/*/memory/` since the same release — the two were never
+  connected. They are now, and memory stays out of the *budget* count on purpose: the harness meters
+  `MEMORY.md` separately and double-counting it would make the one number that section exists to
+  produce wrong. `measured` / `absent` / `empty` / `skipped` are four different lines, because an
+  unread tree must not print like no duplication.
+- **Conflict detection is `none`, with the reason, in its own section.** The mechanical subset ships:
+  directive pairs across two distinct layers whose normalized forms differ *only* by a negation token,
+  labelled candidates and carrying no verdict. What does not ship is semantic contradiction — "commit
+  early and often" against "one reviewed change per PR" share no wording and a string comparison
+  cannot see it. A script that had quietly omitted its fourth section would have read as
+  four-for-four, so it prints the gap instead, in the format `references/enforcement.md` already
+  mandates for the user's own rules. That document now carries the row as a worked example.
+- **`--record` prints to stdout and never writes**, the same contract `surface-check.sh` has held
+  since 0.6.0, and the script always exits 0 for the same reason `enforcement-check.sh` does: a
+  checker that can fail a session is a checker people switch off. Recording on a machine where
+  nothing could be measured prints a warning to stderr rather than freezing a measurement that never
+  happened.
+- **Found by running it, not by reading it:** `ovr=$(grep -c '^' file || echo 0)` printed *two* zeroes
+  on an empty file — `grep -c`'s own `0` and the fallback `0` — and the two-line result then failed
+  an integer test in the summary line. The kind of defect that only appears when the empty case is
+  exercised, which is why the empty case is exercised.
+- **CI's fifth job tests the failing direction, and that is the only reason it is worth having.** The
+  runner has no `~/.claude`, so it is the one place where "absent, not zero" can be asserted for free:
+  the job requires that the repo's own `CLAUDE.md` reads `measured`, that the missing user layer reads
+  `absent` and carries the not-a-zero note, that a stack with nothing measurable refuses to print a
+  budget number, that an unreadable settings file discloses it could not consult `claudeMdExcludes`,
+  and that `--record` leaves the config directory byte-identical. It asserts on wording rather than on
+  the exit code, because the script always exits 0 and a green tick would otherwise mean nothing. The
+  assertions were then verified to *fail* with the not-a-zero note removed.
+
+**This closes three of four diagnostics the platform said in public it does not have.**
+[claude-code#85477](https://github.com/anthropics/claude-code/issues/85477) asked for
+instruction-layer diagnostics, and on 2026-08-17 a Claude Code collaborator answered: *"There is no
+instruction-budget warning, duplicate-rule detection, or cross-file conflict detection yet, so
+leaving this open for that part."* Two of those three were things this plugin already claimed in
+prose; the third it did not have at all. The request also states its own boundary — *"Deliberately
+not included: any form of autonomous rule editing"* — which is word for word this plugin's rule that
+it never canonises on its own. Recorded here rather than on the issue, because a comment written
+before the mechanism existed would have been the same unenforced claim in a more public place.
+
+**`surface-check.sh`'s Python rewrite moved up rather than down**, and 2.2.0 is why.
+`docs/ARCHITECTURE.md` has named it since 1.0.0 as *"a `jq` program wrapped in glue"*. Working on the
+layers turned up a check it should grow —
+[claude-code#74705](https://github.com/anthropics/claude-code/issues/74705) asks for hygiene
+diagnostics including *"permission allowlist entries referencing removed servers"*, and the eleven
+surfaces are counted independently and never cross-referenced, so a grant naming an MCP server that
+no longer exists passes today. Adding that in shell would mean growing the wrong language, so it
+waits for the rewrite instead of being wedged in. `layer-check.sh` is named in the same section for
+the same honesty: at 433 lines it is now the largest script in the tree, its `awk` counting is shell
+used well, and its two `sed` JSON captures are the same defect at one tenth the size.
+
+**The promise from 2.1.0 was not kept, and re-promising it is what 2.1.0 warned about.** That entry
+said the next release wires up `claude plugin eval` with an ablation arm, *"which turns 0.6.0's
+promise into something that can fail rather than something that gets re-promised."* This is the next
+release and it did not. The harness is verified present and complete on 2.1.228 — `--ablation
+with-without` is the default when a plugin is targeted by name, with `--threshold`, `--json`,
+`--report` and `--max-cost-usd` — so the blocker is not availability. It is that the 0.6.0 matrix was
+480 blind judgements and wiring the harness is a different size of job from running it. Stated as a
+broken promise rather than a moved deadline: **no skill description changed in 2.2.0**, so nothing new
+was shipped that needed the test, and that is the only reason the debt did not grow with it.
+
+**The Context cost total was 18 tokens light**, found by re-running the command the section says
+every figure comes from. `claude plugin details tenet` prices the four descriptions at ~622 tokens
+always-on with `tenet-capture` at ~110; the README said ~604 and ~90. No description changed between
+those readings, so either the harness's estimator moved or 2.1.0's number was taken before its last
+description edit — and which it was cannot be recovered now. That irrecoverability is the argument
+for re-running the command at every release rather than carrying the figure forward, which is what
+2.1.0 said it had started doing. Second correction to that section in two releases, both found the
+same way.
+
+**And a stale count in the release gate's own instructions.** `CLAUDE.md` has told a reader since
+1.0.0 that `rename-check.sh` runs *seven* checks. It has run eight since 2.1.0, which added the one
+that fails if `hooks/hooks.json` resolves a store path of its own — the script header counted it and
+the README counted it, and the paragraph that tells you to run the gate did not. Off by one, in the
+release-gate instructions, in the repository whose subject is exactly that.
+
+**One thing measured on this machine that belongs in a release note.** After 2.1.0 shipped,
+`rename-check.sh` exited 1 — and every finding was outside this repository, on the reference surface
+the check exists to grep. The worst of them was a scheduled task, armed and enabled, pointed at the
+store path the rename had retired, still asking for a `_meta/hot.md` that 2.0.0 deleted; it would
+have written an "empty vault" digest about a store it never found. That is the silent zero this whole
+system is about, produced by the release that fixed the fourth instance of it. The lesson is not
+about the script, which worked: `CLAUDE.md` requires the check before any release, and 2.1.0 went out
+without it. Nothing in the plugin changed as a result — the machine-local repairs are not shippable —
+but a release gate that is only run when someone remembers is the next mechanism this repository owes
+itself.
+
 ## 2.1.0 — 2026-08-27
 
 **The automatic drafting path had never run once.** The `Stop` hook `cat`-ed its gate to stdout

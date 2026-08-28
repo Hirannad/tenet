@@ -70,6 +70,18 @@ Three shapes of answer are worth distinguishing, and the example is the third:
 - **`none` — mechanisable, not yet built.** The interesting ones. These are the backlog, and
   writing the reason down is what keeps them from reading like the row above.
 
+**A worked `none`, from this plugin's own scripts.** `scripts/layer-check.sh` measures three of the
+four instruction-layer diagnostics it set out to; the fourth prints this, verbatim, in its own
+section:
+
+| Rule | What catches it |
+| :-- | :-- |
+| Two instructions across layers must not contradict each other | `none` — the negation-pair subset is caught by `layer-check.sh`; a contradiction with no shared wording ("commit early and often" against "one reviewed change per PR") is invisible to a string comparison and needs a model. Mechanisable only by a model, so it stays a judgement call rather than a backlog item |
+
+That is the shape to copy. The cell names the mechanism where there is one, names the boundary of
+what the mechanism reaches, and says whether the remainder is closable. A script that had silently
+omitted its fourth section would have read as four-for-four.
+
 ## What a table like this does not cover
 
 Not every recurring mistake is a rule violation. A reasoning habit — stating an unchecked inference

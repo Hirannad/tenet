@@ -44,12 +44,16 @@ had carried an unchecked second copy until 2.1.0.
   passes it clean and would have been tagged. Check 7 covers all four, so it is a superset on
   three of them — run both, and do not delete the check on the assumption that the platform now
   owns it.
-- **Before any release or rename**, run `bash skills/tenet/scripts/rename-check.sh`. Seven
-  checks, and the seventh is not about renaming at all: it compares `plugin.json` against
-  `marketplace.json` on name, version, license and keywords, because two hand-kept copies of
+- **Before any release or rename**, run `bash skills/tenet/scripts/rename-check.sh`. Eight
+  checks, and the last two are not about renaming at all. The seventh compares `plugin.json`
+  against `marketplace.json` on name, version, license and keywords, and the eighth fails if
+  `hooks/hooks.json` resolves a store path of its own — both because two hand-kept copies of
   the same facts with nothing comparing them is the drift class this repo's whole thesis is
-  about. The three *descriptions* are deliberately different — different lengths for different
-  surfaces — so no check compares them; read them against each other yourself before a release.
+  about. (This paragraph said *seven* from 1.0.0 until 2026-08-28, while the eighth check
+  shipped in 2.1.0 and both the script header and the README counted it. An off-by-one in the
+  release-gate instructions, which is the worst place for one.) The three *descriptions* are
+  deliberately different — different lengths for different surfaces — so no check compares them;
+  read them against each other yourself before a release.
   The script only ever greps, but it greps files outside this repository and prints matching
   lines, so don't paste its output anywhere public. And describe a previous name, never spell
   one: the check greps for them, so quoting one in a tracked file would make that file a

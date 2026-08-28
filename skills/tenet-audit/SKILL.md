@@ -43,9 +43,23 @@ settings layers before concluding a present file is in play.
 Apply `references/rubric.md` to each file: 7 dimensions, a point score each, a letter grade per file. Read the rubric file before scoring — do not score from memory.
 
 ### 3. Cross-layer check
-Apply `references/layer-map.md`. Look for:
-- Same rule duplicated across layers (e.g. a global default repeated in a project file).
-- A project layer that contradicts the global default **without declaring it as an override**.
+**Run `scripts/layer-check.sh <repo>...` first**, resolved from this skill's base directory — the
+same rule as every other script here, never from a remembered absolute path. It measures the two
+findings below rather than leaving them to be eyeballed: an instruction-budget count per layer, and
+the duplication clusters. Until 2.2.0 this step was prose asking for a matrix nobody built, which is
+the shape of an unenforced claim. Read its output before applying `references/layer-map.md`, then
+use the map for the judgement the script explicitly does not make.
+
+Its five per-layer states matter as much as its numbers: only `measured` means counted. `absent`,
+`unreadable`, `excluded` and `unmeasured` are gaps to report, and a layer the script could not open
+is **unexamined, not clean**.
+
+Then apply `references/layer-map.md`. Look for:
+- Same rule duplicated across layers (e.g. a global default repeated in a project file) — the script
+  clusters these; your job is deciding which layer keeps it.
+- A project layer that contradicts the global default **without declaring it as an override**. The
+  script lists negation pairs as *candidates* and deliberately passes no verdict; a semantic
+  contradiction with no shared wording it cannot see at all, and it says so in its own line.
 - Content sitting in the wrong layer (personal prefs in a repo file; team rules in a personal file).
 - Situational content that should be a `paths:`-scoped rule in `.claude/rules/`. Do **not** recommend
   an `@`-import to shrink a file — imports expand at launch and do not reduce context.
@@ -58,6 +72,11 @@ Output a compact report:
 - A **prioritized** fix list — highest-impact first (e.g. "global file 480 lines → split" beats "rephrase one sentence").
 - For a **global/config audit**, also run `references/config-hygiene.md` (settings.json permission cruft, broken hooks, nested `.claude/`, plugin/MCP over-load, memory-file staleness, and **surface growth vs the recorded baseline**) and add a "Config hygiene" section to the report. Check 6 there is a script, not a procedure: run `scripts/surface-check.sh` from this skill's base directory — same rule as below, never from a remembered absolute path. Lead the section with its delta whenever there is one, and report `unread` / `unbaselined` / `untracked` / `unusable` surfaces as gaps rather than folding them into "unchanged" — only `unchanged` means nothing grew.
 - For a **global audit**, also run `scripts/enforcement-check.sh`, resolved from this skill's base directory (the harness prints it when the skill loads). Never from a remembered absolute path — the plugin cache path carries a version number. It reads the user's own table at `~/.claude/enforcement.md`; `references/enforcement.md` here is the format and one worked example, not anybody's data. If the user has no table yet, say so and offer to start one — that is a missing mechanism, not a passing check. It reports three numbers: unmarked rules, orphan rows, empty cells. **An unmarked rule is itself the defect** — every rule in the global CLAUDE.md carries a row saying what catches it, or `none` and the reason. Put the three numbers next to the surface-growth delta at the top, and propose an enforcement cell for anything unmarked. A `PostToolUse` hook runs the same script on every CLAUDE.md edit, so a non-zero count here means an edit slipped through outside a session.
+- For **every audited repo**, report `scripts/layer-check.sh`'s budget line from step 3 next to the
+  surface delta. Over budget is not cosmetic: past roughly 150–200 instructions adherence degrades
+  across *all* of them rather than only the newest, so the fix is fewer instructions, and
+  `paths:`-scoped rules are what actually defer the cost. Its trend line needs a baseline the user
+  accepted, exactly like the surface one — `--record` prints to stdout and the redirect stays theirs.
 - For **every audited repo**, run `scripts/frontmatter-check.sh <repo>...` from the same base directory. It is the mechanism behind the `title`/`type`/`status`/`updated` rule: exemptions live in each repo's `.claude/frontmatter-exempt` (a glob per line, with the reason as a comment), and anything else missing frontmatter is a defect. Report the count. **Do not accept a project CLAUDE.md that restates the schema in prose** — a rule restated instead of mechanised is the third path, the one that grows the rule list while compliance falls. The prose points at the exemption file; the file is what the check reads. This check exists because the rule was found broken 21 times across four repositories with nothing noticing.
 
 ### 5. Fix on approval
@@ -67,6 +86,7 @@ Re-baselining the surface counts as a fix: offer it, never do it silently — an
 
 ```
 bash scripts/surface-check.sh --record > ~/.claude/surface-baseline.json.new
+bash scripts/layer-check.sh --record <repo> > ~/.claude/instruction-baseline.json.new
 ```
 
 Then have them read it and move it into place. Never redirect straight onto the live baseline: the shell truncates the target before the script runs, so a record that goes wrong destroys the accepted file — and its hand-written notes are the part no re-run can reconstruct.
@@ -80,7 +100,7 @@ The recorded counts carry no notes. Offer to write the per-surface reason by han
 3. **Style** — second-person, negatives, specific not vague.
 4. **Compliance** — `<important if="…">` on conditional sections; identity/structure left unwrapped.
 5. **No anti-patterns** — no linter rules, stale snippets, vague text, full arch dumps.
-6. **Layer hygiene** — no cross-layer duplication; overrides explicit; right content in right layer; `@`-imports.
+6. **Layer hygiene** — no cross-layer duplication; overrides explicit; right content in right layer; `@`-imports. `scripts/layer-check.sh` counts the first two.
 7. **Freshness** — no dead paths, stale versions, deprecated commands.
 
 For deep audits read all five reference files (`rubric.md`, `layer-map.md`, `rewrite-recipes.md`, `config-hygiene.md`, `enforcement.md`). For a quick pass, the checklist above is enough.

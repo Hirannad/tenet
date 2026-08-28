@@ -63,3 +63,40 @@ jobs:
 
       - name: Frontmatter, every tracked markdown file
         run: bash skills/tenet-audit/scripts/frontmatter-check.sh .
+
+      - name: layer-check reports absent layers as absent, never as zero
+        # The runner has no ~/.claude, which makes it the one place the FAILING
+        # direction of this script's no-silent-zero rule can be tested for free.
+        # A checker that prints "0 instructions" for a stack it never opened is
+        # the exact defect layer-check.sh was written to close, so CI asserts on
+        # the wording rather than on the exit code — the script always exits 0 by
+        # design, so a green tick here would otherwise mean nothing.
+        run: |
+          set -euo pipefail
+          out=$(bash skills/tenet-audit/scripts/layer-check.sh .)
+          echo "$out"
+
+          # This repo ships a CLAUDE.md, so the project layer must be counted...
+          echo "$out" | grep -qE '^  measured +project \./CLAUDE\.md' \
+            || { echo "FAIL: the repo's own CLAUDE.md was not measured"; exit 1; }
+          # ...while the user layer does not exist here and must say so.
+          echo "$out" | grep -qE '^  absent +user CLAUDE\.md' \
+            || { echo "FAIL: a missing user layer was not reported as absent"; exit 1; }
+          echo "$out" | grep -q 'not a zero' \
+            || { echo "FAIL: absent layers did not carry the not-a-zero note"; exit 1; }
+
+          # Nothing measurable at all: the budget must refuse to print a number.
+          empty=$(mktemp -d); cfg=$(mktemp -d)
+          out2=$(CLAUDE_CONFIG_DIR="$cfg" bash skills/tenet-audit/scripts/layer-check.sh "$empty")
+          echo "$out2" | grep -q 'This is not a budget of zero' \
+            || { echo "FAIL: an unmeasured stack produced a budget number"; exit 1; }
+          echo "$out2" | grep -q 'claudeMdExcludes could not be consulted' \
+            || { echo "FAIL: an unreadable settings file was not disclosed"; exit 1; }
+
+          # --record prints, never writes.
+          sig_before=$(find "$cfg" -type f | sort)
+          CLAUDE_CONFIG_DIR="$cfg" bash skills/tenet-audit/scripts/layer-check.sh --record "$empty" > /dev/null
+          [ "$sig_before" = "$(find "$cfg" -type f | sort)" ] \
+            || { echo "FAIL: --record wrote to the config directory"; exit 1; }
+
+          echo "layer-check: absent/measured distinction and the record contract both hold"

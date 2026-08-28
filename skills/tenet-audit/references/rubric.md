@@ -23,6 +23,17 @@ What it checks: the file is short enough to stay in effective context, and behav
 
 Deduct ~5 pts per major overflow (length, or rules/context entanglement).
 
+**Line count is the wrong unit on its own, and `scripts/layer-check.sh` prints the right one.**
+Lines measure the file; what degrades adherence is the number of *instructions* competing for the
+model's compliance across every layer at once. Frontier models reliably follow roughly 150–200, and
+Claude Code's own system prompt already spends about 50 of them — so a 190-line file of prose can be
+cheaper than a 90-line file of dense bullets. Score this dimension against the script's per-layer
+directive count and its budget line, not against `wc -l`. If the script could not measure a layer,
+that layer is unexamined and the score says so rather than assuming it was small.
+
+Past the budget the degradation is *uniform*: adherence falls across all instructions rather than
+only the newest, which is why trimming here is not cosmetic.
+
 When the finding **is** length, the fix is a `paths:`-scoped rule under `.claude/rules/`, not an
 `@`-import: an imported file expands at launch and costs the same context it did inline. Recommend
 the import only to remove a duplicate.
@@ -117,6 +128,14 @@ What it checks: this file plays well with the other layers. (Scored per file but
 - Personal preferences committed in a team file.
 
 Deduct ~5 pts per duplication/misplacement/undeclared-override.
+
+**Two of these are counted rather than judged.** `scripts/layer-check.sh` reports the duplication
+clusters and the negation-pair override candidates, so the deduction rests on a number. What it
+does not do is decide which layer keeps a duplicate, or whether a negation pair is a genuine
+contradiction — those are this dimension's judgement, and the script says in its own output that it
+passes no verdict. A semantic contradiction with no shared wording it cannot see at all; that one is
+yours, and scoring 15/15 on a stack the script only partly covered means saying which part you read
+yourself.
 
 ---
 

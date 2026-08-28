@@ -83,10 +83,19 @@ asks the user to approve the list. Declining disables them permanently and silen
 
 1. **Duplication** — the same rule in two layers. Keep it in the most general layer that is still
    correct, delete the copy. A global rule restated in a project file is the common case.
+   **Measured by `scripts/layer-check.sh`**, which clusters normalized directive lines carried by two
+   or more distinct layers. Exact match after normalization, not semantic similarity — so it finds
+   copy-paste and misses a paraphrase, and it says which.
 
 2. **Undeclared override** — a project file contradicts a global default without saying so. Since
    layers are concatenated rather than replaced, an unflagged contradiction leaves two live rules
    and the model picks one. Recommend the explicit flag, or removing the contradiction.
+   **Partly measured.** `scripts/layer-check.sh` reports the mechanical subset: directive pairs
+   across layers whose normalized forms differ *only* by a negation token. It labels them candidates
+   and passes no verdict, because a string comparison cannot tell a contradiction from a deliberate
+   narrowing. The rest — a contradiction with no shared wording, like "commit early and often"
+   against "one reviewed change per PR" — is invisible to it, and its output carries a `none` line
+   saying so. That gap is yours to close by reading; it is not covered.
 
 3. **Misplaced content** —
    - Personal preference in a committed team file → move to `~/.claude/CLAUDE.md`.
@@ -104,12 +113,25 @@ asks the user to approve the list. Declining disables them permanently and silen
 6. **Instructions duplicating auto memory** — auto memory skips what CLAUDE.md already says, so a
    CLAUDE.md that restates accumulated preferences is paying for the same content twice. Read the
    memory directory before recommending an addition to CLAUDE.md.
+   **`scripts/layer-check.sh` includes the auto-memory tree in the duplication scan**, so a rule
+   living in both a memory note and an instruction file shows up as a cluster like any other. It
+   stays out of the *budget* count on purpose: the harness meters `MEMORY.md` separately, and
+   counting it twice would make the one number that section exists to produce wrong. `--no-memory`
+   skips the tree, and the summary line says which of `measured` / `absent` / `empty` / `skipped`
+   applied — an unread tree is never reported as no duplication.
 
 ## How to use this in the audit
 
-Build a matrix: for each rule, note which layer(s) it lives in. Any rule in more than one layer is
-a duplication candidate; any rule contradicting a higher layer with no explicit flag is a conflict.
-Report these separately from the per-file scores — they are the findings a single-file tool misses.
+**Run `scripts/layer-check.sh` before reading further.** It builds the mechanical half of the
+matrix: which layers exist and in which of five states, how many directives each carries against the
+~150–200 budget, which normalized directives appear in more than one layer, and which pairs differ
+only by a negation. Until 2.2.0 this paragraph asked the reader to build that matrix by hand, which
+meant a 15-point rubric dimension rested on nothing that could fail.
+
+What the script hands you is counts and candidates. The judgement stays here: which layer keeps a
+duplicate, whether a negation pair is a real contradiction or a deliberate narrowing, and everything
+semantic the script's own `none` line disclaims. Report these separately from the per-file scores —
+they are the findings a single-file tool misses.
 
 Two commands settle what is loaded rather than what exists: `/context` lists the memory files that
 actually loaded this session, and the `InstructionsLoaded` hook logs which files loaded, when, and
