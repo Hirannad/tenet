@@ -7,6 +7,46 @@ manifests. Releases before 1.0.0 carry no git tag; the manifests were the whole 
 
 Dates are release dates.
 
+## 2.2.7 — 2026-08-28
+
+**The one read a directory policy can be read literally against, documented literally.** The
+Software Directory Policy's Safety and Security section says software "must not query or extract
+data from Claude's memory, chat history, conversation summaries, or user-generated or uploaded
+files." This plugin reads Claude Code's auto-memory tree, and said so in one table row. A table row
+cannot answer a policy read word for word. The behaviour was left unchanged on purpose, so what
+changed is the precision of the account.
+
+`## Privacy` — the section the submitted Privacy policy URL points at — gains a named subsection
+stating the whole of it:
+
+- **The two depths, separately.** The sweep selects notes carrying a `type: feedback` line and takes
+  exactly one field from each, its `description:` line, alongside the project directory and
+  filename; the body is scanned to match the type and is otherwise unread and unreported. The audit
+  reads directive lines and reports one thing only — whether a line also appears in an instruction
+  file — with its working copies in a `mktemp -d` deleted on exit, and `--no-memory` to skip the
+  tree.
+- **Where it goes.** Your terminal, nowhere else, and the no-network-call grep above it in the same
+  section covers both scripts: there is no code path that could send any of it.
+- **How to switch it off**, with three of Claude Code's own switches rather than any of this
+  plugin's: `CLAUDE_CODE_DISABLE_AUTO_MEMORY`, `autoMemoryEnabled: false`, or relocating
+  `autoMemoryDirectory`. In each case the sweep reports that it read nothing rather than reporting no
+  deviations — the house rule, stated in the one place where conflating the two would be
+  self-serving.
+- **A narrowness admitted rather than left to be found.** `layer-check.sh` reads
+  `<config dir>/projects` directly and does not follow `autoMemoryDirectory`, so a relocated tree
+  reads as absent there while the sweep still finds it. An inconsistency between two scripts,
+  written down because an honest disclosure includes the parts that read as sloppy.
+- **Why it is not new access.** Claude Code loads memory into the session's context at every start,
+  so the model already holds it before any script here runs. Nothing here opens a door that was shut.
+
+Also fixed: 2.2.5's own edit left a sentence orphaned mid-line in that paragraph, past the file's
+wrap — a prose defect introduced by the release that was correcting prose defects.
+
+The behaviour is unchanged by choice. The alternative on the table was flipping `--no-memory` to be
+the default, which would have removed the content read outright; it was declined because the read is
+local, disclosed, and reaches nothing the session did not already hold — and a claim that survives
+being written out in full does not need to be shrunk to survive being read.
+
 ## 2.2.6 — 2026-08-28
 
 **`/tenet:tenet` was reporting an empty ledger instead of failing, and the cause was a file mode.**

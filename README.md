@@ -237,9 +237,39 @@ not hiding anything.) The only `git` calls are local reads — `remote get-url`,
 are `bootstrap.sh`, which creates your store, and `promote.sh`, which moves an approved draft from
 `inbox/` to the store root. Everything else reads, with one exception worth naming rather than
 letting you find it: `layer-check.sh` opens a `mktemp -d` scratch directory for five working files
-and deletes it on exit, holding nothing but normalised copies of directive text already on disk. One consequence worth stating: when your store is
-a git repository, `promote.sh` uses `git mv`, so an unattended session start can leave a staged
-rename in a repository you did not touch.
+and deletes it on exit, holding nothing but normalised copies of directive text already on disk.
+One consequence worth stating: when your store is a git repository, `promote.sh` uses `git mv`, so
+an unattended session start can leave a staged rename in a repository you did not touch.
+
+### What it reads from Claude's own memory, exactly
+
+Claude Code's auto memory is the one surface where "it reads this" deserves more than a table row,
+because a policy can be read literally and a table row cannot answer it. So here is the whole of it.
+
+Two scripts touch `~/.claude/projects/*/memory/`, at different depths:
+
+- **The sweep** (`inventory.sh`) extracts two fields. It selects notes carrying a `type: feedback`
+  line, then reads each selected note's `description:` line, and prints the project directory, the
+  filename, and that description. **That description line is the only content it takes from a
+  note** — the file is scanned to match the type and is otherwise unread and unreported.
+- **The audit** (`layer-check.sh`) reads the directive lines, normalises them, and reports one thing
+  only: whether a line also appears in an instruction file. The finding is *"this rule lives in two
+  layers"*. Its working copies sit in a `mktemp -d` deleted on exit, and `--no-memory` skips the
+  tree entirely.
+
+Both print to your terminal and nowhere else. The no-network-call grep above covers both, so nothing
+read here can leave the machine — there is no code path that could send it.
+
+**Three ways to make it read nothing**, and all three are Claude Code's own switches rather than
+this plugin's: `CLAUDE_CODE_DISABLE_AUTO_MEMORY`, `autoMemoryEnabled: false`, or relocating
+`autoMemoryDirectory`. In each case the sweep reports that it *read nothing*, never that it found no
+deviations — the two must not print the same way. (`layer-check.sh` reads `<config dir>/projects`
+directly and does not follow `autoMemoryDirectory`, so a relocated tree reads as absent there.
+Narrower than the sweep, stated rather than left to be discovered.)
+
+**And this is not access to anything the session lacked.** Claude Code loads your memory into the
+session's context itself, at every start. The model in the session already holds it before any
+script here runs.
 
 **All state is local files you can read.** The store is markdown; the baselines and tables are
 files in your home directory that you edit by hand. The store's path is the one thing kept in
