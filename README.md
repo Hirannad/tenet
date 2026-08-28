@@ -87,6 +87,10 @@ layer the check could not open reports as unexamined, never as empty.
 eleven surfaces diffed against a baseline you recorded and accepted, so you see `18 → 25` with the
 additions named wherever the baseline recorded the items, rather than a bare `25`. It never
 re-records that baseline itself: one that updates itself erases the signal it exists to produce.
+It counts what your config *declares*, not what you use — there is no usage data anywhere in this
+plugin, so it can say that seven plugins arrived since you accepted a baseline and cannot say which
+two you actually invoke. `/skill-doctor` has that number; this has the delta. It runs when you run
+the audit, nothing watches the surface in the background, and it never edits your config.
 
 **Stays out of the way.** Notes are scoped per directory. Methodology is visible everywhere;
 project knowledge only where you bind it. A growing knowledge base never floods an unrelated
@@ -106,6 +110,11 @@ one, and a separate mechanical step does the promoting so it cannot be forgotten
 - **Not a task list.** Open questions are parked tensions with a closing condition, not to-dos.
 - **Claude Code only.** Skills, hooks and the plugin manifest are Claude Code mechanisms. It is not
   editor-agnostic and does not target other agents.
+- **Not a churn log.** A tool you tried for three days and threw out is a forced move, not a
+  decision — no second path was weighed, so the capture gates reject it, and should. This is for
+  commitments that outlive the things they were made about: how you work, the shape you gave the
+  code, the constraint you accepted. If nothing you decide lasts longer than a fortnight, install
+  nothing. That is a real answer, not a failure of the tool.
 
 ## Compared to
 

@@ -7,6 +7,32 @@ manifests. Releases before 1.0.0 carry no git tag; the manifests were the whole 
 
 Dates are release dates.
 
+## 2.2.4 — 2026-08-28
+
+**Two things a skeptic asks that the README had no answer for, and one of them was the author's own
+overpromise.** A technical reader pushed back before the launch: this only pays off once a tool's
+lifetime exceeds a fortnight, and the audit half is a prompt you can write yourself. Both are
+partly right, and the honest version of each is now in the README rather than in a reply.
+
+- **The surface bullet said what it measures but not what it cannot.** It counts what the config
+  *declares*; there is no usage data anywhere in this plugin, so it can say seven plugins arrived
+  since you accepted a baseline and cannot say which two you invoke — `/skill-doctor` owns that
+  number. It also runs only inside an audit you start, watches nothing in the background, and never
+  edits your config. Nothing in the old wording was false; nothing in it foreclosed the reading that
+  the tool spots your unused plugins and offers to remove them, which is a claim the author had
+  already made out loud. An unenforced promise about a tool whose subject is unenforced promises.
+- **`What this is not` gained a sixth bullet: not a churn log.** The boundary was already mechanised
+  — capture gate A rejects anything with only one viable path, and the not-list names forced moves
+  explicitly — so the bullet documents behaviour rather than adding any. It ends where the argument
+  honestly ends: if nothing you decide lasts longer than a fortnight, install nothing.
+
+Measured while answering, because the counter-argument needed evidence rather than conviction: 19 of
+37 decisions in the author's ledger are tool-independent methodology and 13 more are structure, so 5
+are a tool choice; 30 of the 47 dated notes were written before this plugin's first release existed;
+and the machinery under them shipped 18 versions in 13 days, including a breaking one, without a
+single accepted note changing status. The same pass found two notes whose subject *did* churn still
+carrying `accepted` — the peer's objection holding where it holds.
+
 ## 2.2.3 — 2026-08-28
 
 **The Known limits preamble promised an issue behind every bullet, and four of the eight have
