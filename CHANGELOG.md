@@ -7,6 +7,35 @@ manifests. Releases before 1.0.0 carry no git tag; the manifests were the whole 
 
 Dates are release dates.
 
+## 2.2.5 — 2026-08-28
+
+**The Privacy section is now a submitted privacy policy, and it had two inaccuracies in it.** The
+plugin was submitted to the Claude plugin directory today with `#privacy` as its Privacy policy URL.
+That freezes the link: whatever the directory recorded is what a reviewer and every future user
+follows. A section that was internal documentation an hour earlier is now the document the claim
+rests on, and it was wrong in two places — both found by reading the shipped scripts against the
+prose rather than trusting the prose.
+
+- **The "what it reads outside its own tree" table was missing three paths, two of them outside
+  `$HOME`.** `layer-check.sh` reads `/Library/Application Support/ClaudeCode/managed-settings.json`,
+  `/etc/claude-code/managed-settings.json` and `~/.claude/settings.local.json` for
+  `claudeMdExcludes`; the table's managed-policy row covered only the managed policy `CLAUDE.md`,
+  and the `settings.json` row credited `surface-check.sh` and the sweep but not `layer-check.sh`.
+  An automated policy scan greps code for absolute system paths and diffs it against the docs, so
+  `/etc/` in a script and nothing in the table is the worst possible arrangement — and it was in the
+  one table whose entire job is to be exhaustive.
+- **"The two things that write at all" was an absolute with a third writer behind it.**
+  `layer-check.sh` opens a `mktemp -d` for five working files and traps `rm -rf` on exit. Not a
+  privacy consequence in any real sense, and it never leaves the temp directory — but a reader who
+  greps for `mktemp` finds a one-word contradiction in a Privacy section, and the sentence is now
+  load-bearing in a way it was not when it was written. It says "write where you can see them" and
+  names the exception.
+
+No machinery changed, and no `PRIVACY.md` was added. A dedicated document was considered and
+rejected for a specific reason: the submitted URL points at the README anchor, so a second copy of
+these facts would sit next to a frozen link pointing at the first — two hand-kept copies with
+nothing comparing them, which is the drift class this repository exists to argue against.
+
 ## 2.2.4 — 2026-08-28
 
 **Two things a skeptic asks that the README had no answer for, and one of them was the author's own

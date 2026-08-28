@@ -233,9 +233,11 @@ a `curl`-pipe-`bash` deny rule in prose. Prose, not a call — which is why the 
 not hiding anything.) The only `git` calls are local reads — `remote get-url`, `rev-parse`,
 `status` — plus one local `git mv` when an approved draft is promoted.
 
-**No script writes anywhere under `~/.claude`.** The two things that write at all are
-`bootstrap.sh`, which creates your store, and `promote.sh`, which moves an approved draft from
-`inbox/` to the store root. Everything else reads. One consequence worth stating: when your store is
+**No script writes anywhere under `~/.claude`.** The two things that write where you can see them
+are `bootstrap.sh`, which creates your store, and `promote.sh`, which moves an approved draft from
+`inbox/` to the store root. Everything else reads, with one exception worth naming rather than
+letting you find it: `layer-check.sh` opens a `mktemp -d` scratch directory for five working files
+and deletes it on exit, holding nothing but normalised copies of directive text already on disk. One consequence worth stating: when your store is
 a git repository, `promote.sh` uses `git mv`, so an unattended session start can leave a staged
 rename in a repository you did not touch.
 
@@ -426,10 +428,11 @@ error — each one is a first-run state that says which state it is:
 | `~/.claude/projects/*/memory/` | the sweep, for `feedback` notes; `layer-check.sh`, for rules duplicated between memory and an instruction file | it says which it was — directory missing, relocated by `autoMemoryDirectory`, or auto memory switched off — because none of those is "no deviations" |
 | `~/.claude/CLAUDE.md` | the audit and its `PostToolUse` hook | nothing to audit |
 | `~/.claude/rules/`, and the managed policy `CLAUDE.md` | `layer-check.sh` | that layer does not exist on this machine — reported as `absent`, which is not a count of zero |
+| `/Library/Application Support/ClaudeCode/managed-settings.json`, `/etc/claude-code/managed-settings.json` | `layer-check.sh`, for `claudeMdExcludes` | no managed policy on this machine — the excludes list reads as empty, and a layer it could not parse reads as `unmeasured` |
 | `~/.claude/instruction-baseline.json` | `layer-check.sh` | no baseline yet — today's count, plus the command that records one |
 | `~/.claude/enforcement.md` | `enforcement-check.sh` | no table yet — it reports how many rules are uncovered, and the hook stays quiet rather than alarming |
 | `~/.claude/surface-baseline.json` | `surface-check.sh` | no baseline yet — today's counts, plus the command that records them |
-| `~/.claude/settings.json` | `surface-check.sh`, and the sweep for the two auto-memory settings | the JSON surfaces read as unmeasured, never as zero |
+| `~/.claude/settings.json`, `~/.claude/settings.local.json` | `surface-check.sh`, the sweep for the two auto-memory settings, and `layer-check.sh` for `claudeMdExcludes` | the JSON surfaces read as unmeasured, never as zero |
 | `~/.claude.json` | `surface-check.sh` | no user-scope MCP servers to count |
 | `~/.claude/skills/`, `~/.claude/agents/`, `~/.claude/plugins/` | `surface-check.sh` | each says which directory is missing, rather than counting it as zero |
 
