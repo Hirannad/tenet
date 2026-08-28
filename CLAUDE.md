@@ -2,7 +2,7 @@
 title: tenet repo instructions
 type: guide
 status: active
-updated: 2026-08-24
+updated: 2026-08-28
 ---
 
 # tenet — repo instructions
@@ -35,9 +35,16 @@ had carried an unchecked second copy until 2.1.0.
   Nothing before 1.0.0 is tagged, and the CHANGELOG is keyed by version rather than by commit
   for the same reason — a version survives a repository move, a hash does not.
 - **Create the tag with `claude plugin tag --push`**, from 2.0.0 on. It refuses on a dirty tree,
-  writes the annotation, and pushes. The naming convention changed with it: `v1.0.0` was made by
-  hand, everything from `tenet--v2.0.0` is the harness's format, so the tag list is mixed by
-  design and the CHANGELOG says where the seam is.
+  writes the annotation, and pushes **the tag** — not the branch. Its `✔ Pushed to origin` line
+  sits directly under `✔ Created tag` and reads as covering the whole operation; measured at the
+  2.2.6 release, it does not. The commits behind the tag do reach the remote, but `main` stays
+  `[ahead 1]`, and `claude plugin update` reads the branch head rather than the tag list — so the
+  tag list advertises a version every installed copy is unable to get. That is the failure mode
+  the version-bump-is-the-release rule exists to prevent, arriving through the command that
+  implements it. Always `git push origin main` afterwards: **the release is done when
+  `git status -sb` prints no `ahead`**, not when the tag command printed its checkmark. The naming
+  convention changed with it: `v1.0.0` was made by hand, everything from `tenet--v2.0.0` is the
+  harness's format, so the tag list is mixed by design and the CHANGELOG says where the seam is.
   **It does not replace `rename-check.sh` check 7**, and this was measured rather than assumed
   (2026-08-26, sandbox clone, one field broken at a time): the native command validates the
   **version** field only. A `name`, `license` or `keywords` mismatch between the two manifests

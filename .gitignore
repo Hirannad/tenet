@@ -6,3 +6,8 @@ vault-template/.obsidian/
 # The machine-local instruction layer: internal doc pointers and per-machine facts.
 # CLAUDE.md carries only what stays true in a clone.
 CLAUDE.local.md
+
+# The freeze period's usage matrix and friction log (2026-08-28 → 2026-09-25).
+# Working notes for one person in Hungarian, not shipped context. Delete the file
+# when the closing review has consumed it; this line can stay either way.
+FRICTION.local.md
