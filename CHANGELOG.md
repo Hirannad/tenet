@@ -7,6 +7,17 @@ manifests. Releases before 1.0.0 carry no git tag; the manifests were the whole 
 
 Dates are release dates.
 
+## 2.2.3 — 2026-08-28
+
+**The Known limits preamble promised an issue behind every bullet, and four of the eight have
+none.** "Each one has an issue open rather than a shrug" was written when the section held exactly
+the four measured questions, and three releases later the section had grown while the sentence had
+not — the same drift the section exists to admit. The preamble now says what is true: the first
+four are open questions with issues, the other four live in the README because three are
+deliberate limits and one is an unknown stated rather than quietly fixed. Found by an adversarial
+read of the launch material against the repo, one click deep — exactly where a first-day reader
+starts.
+
 ## 2.2.2 — 2026-08-28
 
 **The README's front door said two numbers its own sources no longer said.** A launch post drives

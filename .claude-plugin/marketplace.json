@@ -11,7 +11,7 @@
       "name": "tenet",
       "source": "./",
       "description": "Records decisions with the condition that would reverse them, sweeps weekly for conditions that have fired, and audits the instruction layer for rules nothing enforces. Directory-scoped, so a growing knowledge base never floods a session.",
-      "version": "2.2.2",
+      "version": "2.2.3",
       "category": "productivity",
       "homepage": "https://github.com/Hirannad/tenet",
       "license": "MIT",

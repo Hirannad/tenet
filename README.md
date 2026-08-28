@@ -241,7 +241,9 @@ paths hold something you would rather not see echoed.
 
 ## Known limits
 
-Measured, not estimated, and each one has an issue open rather than a shrug.
+Measured, not estimated. The first four are open questions, and each has an issue rather than a
+shrug; the other four live here rather than in the tracker — three are deliberate limits, one is
+an unknown stated rather than quietly fixed.
 
 - **The scope gate is unexercised in the author's own vault.** 43 knowledge notes, all
   `scope: universal`, zero `domain` — against a threshold the sweep itself puts at ~15. The
