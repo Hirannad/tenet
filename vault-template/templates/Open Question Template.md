@@ -10,21 +10,14 @@ related:
   - ""
 ---
 
-<!-- One paragraph per line. Do not hand-wrap prose. -->
+<!-- A question whose answer is not yet knowable, or not yet worth finding out. Not a to-do. -->
 
 ## The tension
 
-<!-- What is genuinely undecided. Not a to-do — a question whose answer is not yet knowable,
-     or not yet worth the cost of finding out. -->
-
 ## Why it is parked
-
-<!-- Not deciding is also a decision. Say what makes waiting the right choice. -->
 
 ## What would close it
 
-<!-- The same thing goes in the `resolves` property. -->
+<!-- Mirror it into `resolves`. -->
 
 ## Interim position
-
-<!-- How you behave until then, so that parking is not paralysis. -->

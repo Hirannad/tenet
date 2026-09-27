@@ -1,6 +1,6 @@
 # Maintenance checks
 
-Ten checks. Each says what to look for, and what the report line should say.
+Nine checks. Each says what to look for, and what the report line should say.
 
 ## 1. Revisit sweep
 
@@ -58,7 +58,7 @@ elsewhere**, or when it is an **intermediate work product** with no other home.
 Count `scope: universal` notes. Above ~15, report it.
 
 **Gotchas do not count**, and the inventory line is labelled that way. They are `universal` by
-default, but `resolve.sh` skips the type, so they load nothing into any session. Counting them
+default, but the session-start list skips the type, so they load nothing into any session. Counting them
 would raise the number this check watches without a byte more context being loaded — a false alarm
 measured against the check's own reason for existing.
 
@@ -100,7 +100,7 @@ Five or more notes sharing a `categories` value with no hub note. Propose:
 - the `bindings.md` line that would scope it to a directory, if an obvious one exists.
 
 Hubs carry the category's meaning and its boundary against neighbouring categories. They do **not**
-list the notes: that is what the `bases/` views are for, and a hand-written index goes stale. Being
+list the notes: a hand-written index goes stale. Being
 undated, a hub is invisible to the type/status and word-cap loops in the inventory — deliberate, as
 it is bookkeeping rather than knowledge.
 
@@ -113,11 +113,8 @@ Corrections are no longer collected here. Claude Code's own auto memory records 
 notes, and duplicating that was the redundancy 2.0.0 removed. This check reads them and does the
 part the platform does not: turns a repeat into a verdict.
 
-`inventory.sh` dumps the `feedback` entries it found. It does **not** dump `_meta/retro.md` —
-no script reads that file, or `_meta/log.md`, or `_meta/statuses.md`. This document claimed
-otherwise until 2.1.0, which is worse than a gap: it told you a file had been put in front of you
-when nothing had opened it. Read `_meta/retro.md` yourself with `Read` — it remains the log of
-*judgements*, the error-class table and what was decided about each class, and it is the second
+The inventory dumps the `feedback` entries it found. It does **not** dump `_meta/retro.md`: read
+that yourself with `Read`. It is the log of judgements and the error-class table, and the second
 axis of this count.
 
 Count **two ways**: by the rule or convention named, and by error class. Two or more on either

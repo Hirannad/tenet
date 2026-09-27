@@ -1,21 +1,21 @@
 ---
 name: tenet-sweep
 description: Weekly housekeeping for the decision ledger. Sweeps for decisions whose reversal condition may now be met, plus dead links, orphans, stale drafts, unjustified raw files and an over-grown universal layer, then writes a short digest and proposes fixes without applying them. Use when the user asks for the weekly sweep or vault maintenance, wants to look through or tidy up their own decision notes, asks which recorded conditions may have fired since the last pass, or when a session-start notice says maintenance is overdue. It reviews the notes as a set; it does not search them for a fact.
-allowed-tools: Read, Write, Edit, Grep, Glob, Bash(${CLAUDE_PLUGIN_ROOT}/skills/tenet-sweep/scripts/inventory.sh *)
+allowed-tools: Read, Write, Edit, Grep, Glob, Bash(python3 ${CLAUDE_PLUGIN_ROOT}/tenet/cli.py *)
 ---
 
 # Ledger maintenance
 
 **The ledger's path is printed by the block below** — use that, never an assumed default.
 
-Nothing in this plugin schedules this run. What ships instead is the nag: `promote.sh` reports
-at every session start when the last digest is over a week old, so a forgotten sweep says so
+Nothing in this plugin schedules this run. What ships instead is the nag: `tenet/promote.py`
+reports at every session start when the last digest is over a week old, so a forgotten sweep says so
 rather than going quiet. Wire it to a real scheduler yourself if you want one. **It proposes;
 it does not decide.** The only thing it may write on its own is the digest note. Everything
 else is a suggestion for the user.
 
 ```!
-"${CLAUDE_PLUGIN_ROOT}/skills/tenet-sweep/scripts/inventory.sh"
+python3 ${CLAUDE_PLUGIN_ROOT}/tenet/cli.py sweep
 ```
 
 **Work from that dump, and use `Read` / `Grep` / `Glob` for anything it does not cover — do not
@@ -61,14 +61,12 @@ proposals, no prose padding. Lead with the revisit sweep; that is what the user 
 If everything is clean, say so in two lines. A digest that manufactures work to look useful is
 worse than a short one.
 
-There is no index file to maintain: the `bases/` views are the catalogue, and a hand-written one
-would only go stale.
+There is no index file to maintain; a hand-written one would only go stale.
 
 ## What this must never do
 
 - Change a decision's `status`. Reversing a decision is the user's call.
 - Write a `pattern`. Propose; never author.
 - Delete anything. Propose deletions in the digest.
-- Move notes out of `inbox/`. The `tenet` skill's `scripts/promote.sh` owns that, off the
-  SessionStart hook — a reviewed note reaches the vault root without anyone remembering to run it.
+- Move notes out of `inbox/`. `tenet/promote.py` owns that, off the SessionStart hook.
 - Touch anything in `raw/`.

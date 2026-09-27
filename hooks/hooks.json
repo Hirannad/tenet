@@ -6,11 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/skills/tenet/scripts/promote.sh\" || true"
-          },
-          {
-            "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/skills/tenet/scripts/resolve.sh\" || true"
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/tenet/cli.py\" hook session-start"
           }
         ]
       },
@@ -19,32 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/skills/tenet/scripts/resolve.sh\" || true"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/on-claude-md-edit.sh\"",
-            "timeout": 20,
-            "statusMessage": "Checking CLAUDE.md enforcement coverage..."
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/on-stop.sh\"",
-            "timeout": 15,
-            "statusMessage": "Checking whether this session decided anything..."
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/tenet/cli.py\" hook session-start --compact"
           }
         ]
       }

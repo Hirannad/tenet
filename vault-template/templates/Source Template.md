@@ -12,24 +12,15 @@ categories:
   - ""
 ---
 
-<!-- A source note is a pointer, not a copy. Its subject is the source's EFFECT on your
-     thinking, not the source's contents. If this note reads as a summary of the article, it is
-     redundant with the article and should be deleted.
-
-     One paragraph per line. Do not hand-wrap prose. -->
+<!-- The source's effect on your thinking, not a summary of it. -->
 
 ## What I took
 
-<!-- Only what actually changed or confirmed a decision. Link those decisions, and put the same
-     links in the `influenced` property. -->
+<!-- What changed or confirmed a decision; link those decisions in `influenced`. -->
 
 ## What I did NOT take, and why
 
-<!-- Often the more valuable half: what you rejected, and the reason. -->
-
 ## Why raw material is kept (only when it is)
 
-<!-- Required when `kept` points at a file in raw/. There are exactly two valid reasons:
-       1. it cannot be retrieved again (not public, offline, liable to disappear)
-       2. it is an intermediate work product backing a decision, with nowhere else to live
-     Anything else: keep the link, drop the copy. -->
+<!-- Required when `kept` points into raw/: it cannot be retrieved again, or it is an
+     intermediate work product with nowhere else to live. -->

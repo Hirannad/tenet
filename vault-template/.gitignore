@@ -1,12 +1,5 @@
-# Obsidian churns these constantly; they carry no knowledge.
 .obsidian/workspace.json
 .obsidian/workspace-mobile.json
 .obsidian/cache
 .trash/
 .DS_Store
-
-# Raw material is tracked by default: the notes are the database, git is the backup,
-# and an intermediate work product is worth as much as the decision it supports.
-# Uncomment the next line when the vault starts holding material that should stay on
-# one machine — the reasoning layer stays versioned either way.
-# raw/

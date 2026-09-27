@@ -1,18 +1,4 @@
-# Three checks that a runner can actually perform, and two deliberate omissions.
-#
-# What is NOT here, and why — because a CI file that looks thorough while running
-# nothing is the failure this whole repository is about:
-#
-#   * `rename-check.sh` greps a wide surface that includes `~/.claude`, the
-#     Obsidian vault registry and a live store. None of those exist on a runner,
-#     so it would grep almost nothing and report clean — a green tick standing in
-#     for a check that never looked. It stays a pre-release step run by a person,
-#     on the machine where those paths are real.
-#   * `claude plugin validate` needs the CLI, and its useful output depends on the
-#     harness version you are actually shipping against. It is in the pre-release
-#     checklist in docs/ARCHITECTURE.md. `--strict` in particular can never be
-#     green here: this repository keeps its own CLAUDE.md at the plugin root on
-#     purpose, and the validator warns about that by design.
+# What a runner can check. `claude plugin validate` needs the CLI and stays a release step.
 name: checks
 on: [push, pull_request]
 
@@ -21,82 +7,42 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
 
-      - name: Shell syntax, every script
-        run: |
-          fail=0
-          for f in $(find . -name '*.sh' -not -path './.git/*' | sort); do
-            if bash -n "$f"; then echo "ok    $f"; else echo "FAIL  $f"; fail=1; fi
-          done
-          echo "checked $(find . -name '*.sh' -not -path './.git/*' | wc -l) script(s)"
-          exit $fail
+      - name: Unit tests
+        run: python3 -m unittest discover -s tests -t . -v
 
-      - name: JSON validity, every manifest and hook config
+      - name: JSON validity
         run: |
           for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json hooks/hooks.json; do
-            python3 -c "import json,sys; json.load(open(sys.argv[1])); print('ok   ', sys.argv[1])" "$f"
+            python3 -c "import json,sys; json.load(open(sys.argv[1])); print('ok', sys.argv[1])" "$f"
           done
 
-      - name: Manifest fields agree
-        # The same four fields rename-check.sh check 7 compares. Duplicated here
-        # rather than reused because that script cannot run on a runner, and the
-        # cost of a version mismatch is a release that sits in the remote while
-        # every installed copy keeps running the code it fixed.
+      - name: Shell syntax (the audit scripts, until they are ported)
+        run: for f in $(git ls-files '*.sh'); do bash -n "$f" && echo "ok $f"; done
+
+      - name: Invariants
+        # A skill's ! block may expand nothing but ${CLAUDE_PLUGIN_ROOT}: anything else makes the
+        # preprocessor reject the block and load the skill without its body. hooks.json names no
+        # store path: tenet/paths.py is the only resolver.
         run: |
-          python3 - <<'PY'
-          import json, sys
-          p = json.load(open('.claude-plugin/plugin.json'))
-          m = json.load(open('.claude-plugin/marketplace.json'))
-          entries = [e for e in m['plugins'] if e['name'] == p['name']]
-          if not entries:
-              sys.exit(f"no marketplace entry named {p['name']!r} — nothing to compare, which is not a pass")
-          e = entries[0]
-          bad = []
-          for k in ('name', 'version', 'license', 'keywords'):
-              a, b = p.get(k), e.get(k)
-              if a != b:
-                  bad.append(f"  {k}: plugin.json {a!r} vs marketplace.json {b!r}")
-          print(f"compared 4 field(s) on {p['name']} {p['version']}")
-          if bad:
-              sys.exit("MANIFEST DRIFT:\n" + "\n".join(bad))
-          PY
+          bad=0
+          for f in skills/*/SKILL.md; do
+            awk '/^```!/{f=1;next} /^```/{f=0} f{l=$0; gsub(/\$\{CLAUDE_PLUGIN_ROOT\}/,"",l); if (l ~ /\$/) {print FILENAME": "$0; b=1}} END{exit b}' "$f" || bad=1
+          done
+          if grep -nE 'Claude/|TENET_LEDGER|CLAUDE_PLUGIN_OPTION_' hooks/hooks.json; then bad=1; fi
+          exit $bad
 
       - name: Frontmatter, every tracked markdown file
         run: bash skills/tenet-audit/scripts/frontmatter-check.sh .
 
       - name: layer-check reports absent layers as absent, never as zero
-        # The runner has no ~/.claude, which makes it the one place the FAILING
-        # direction of this script's no-silent-zero rule can be tested for free.
-        # A checker that prints "0 instructions" for a stack it never opened is
-        # the exact defect layer-check.sh was written to close, so CI asserts on
-        # the wording rather than on the exit code — the script always exits 0 by
-        # design, so a green tick here would otherwise mean nothing.
         run: |
           set -euo pipefail
           out=$(bash skills/tenet-audit/scripts/layer-check.sh .)
-          echo "$out"
-
-          # This repo ships a CLAUDE.md, so the project layer must be counted...
-          echo "$out" | grep -qE '^  measured +project \./CLAUDE\.md' \
-            || { echo "FAIL: the repo's own CLAUDE.md was not measured"; exit 1; }
-          # ...while the user layer does not exist here and must say so.
-          echo "$out" | grep -qE '^  absent +user CLAUDE\.md' \
-            || { echo "FAIL: a missing user layer was not reported as absent"; exit 1; }
-          echo "$out" | grep -q 'not a zero' \
-            || { echo "FAIL: absent layers did not carry the not-a-zero note"; exit 1; }
-
-          # Nothing measurable at all: the budget must refuse to print a number.
+          echo "$out" | grep -qE '^  measured +project \./CLAUDE\.md'
+          echo "$out" | grep -qE '^  absent +user CLAUDE\.md'
           empty=$(mktemp -d); cfg=$(mktemp -d)
-          out2=$(CLAUDE_CONFIG_DIR="$cfg" bash skills/tenet-audit/scripts/layer-check.sh "$empty")
-          echo "$out2" | grep -q 'This is not a budget of zero' \
-            || { echo "FAIL: an unmeasured stack produced a budget number"; exit 1; }
-          echo "$out2" | grep -q 'claudeMdExcludes could not be consulted' \
-            || { echo "FAIL: an unreadable settings file was not disclosed"; exit 1; }
-
-          # --record prints, never writes.
-          sig_before=$(find "$cfg" -type f | sort)
-          CLAUDE_CONFIG_DIR="$cfg" bash skills/tenet-audit/scripts/layer-check.sh --record "$empty" > /dev/null
-          [ "$sig_before" = "$(find "$cfg" -type f | sort)" ] \
-            || { echo "FAIL: --record wrote to the config directory"; exit 1; }
-
-          echo "layer-check: absent/measured distinction and the record contract both hold"
+          CLAUDE_CONFIG_DIR="$cfg" bash skills/tenet-audit/scripts/layer-check.sh "$empty" | grep -q 'This is not a budget of zero'

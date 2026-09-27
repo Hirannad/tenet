@@ -1,8 +1,8 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "tenet",
-  "description": "A commitment ledger for decisions and rules. Records what you chose, why, and the condition that would reverse it — then comes back when that condition fires. Every rule carries what catches it when it breaks, or `none` and the reason; a rule with no answer is itself the defect.",
-  "version": "2.2.7",
+  "description": "A decision ledger that comes back when its assumptions expire, plus an audit of the instruction layer that counts the rules nothing enforces. Personal tool, published as-is.",
+  "version": "3.0.0",
   "author": {
     "name": "József Juhász",
     "url": "https://github.com/Hirannad"
@@ -16,16 +16,13 @@
     "adr",
     "claude-md",
     "instructions",
-    "knowledge",
-    "pkm",
-    "obsidian",
     "claude-code"
   ],
   "userConfig": {
     "ledger": {
       "type": "directory",
       "title": "Decision ledger",
-      "description": "Where the notes live. An ordinary directory of markdown files, created on first run if it does not exist. The plugin never owns it: uninstalling leaves it exactly where it is.",
+      "description": "Where the notes live: an ordinary directory of markdown files. /tenet:tenet-capture prints the command that creates it. Uninstalling the plugin leaves it where it is.",
       "default": "~/Claude/ledger"
     }
   }

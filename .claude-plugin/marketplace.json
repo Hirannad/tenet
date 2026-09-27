@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "tenet",
-  "description": "A commitment ledger for decisions and rules, and the machinery that keeps both from rotting quietly.",
+  "description": "tenet: a decision ledger and an instruction-layer audit for Claude Code.",
   "owner": {
     "name": "József Juhász",
     "url": "https://github.com/Hirannad"
@@ -10,22 +10,8 @@
     {
       "name": "tenet",
       "source": "./",
-      "description": "Records decisions with the condition that would reverse them, sweeps weekly for conditions that have fired, and audits the instruction layer for rules nothing enforces. Directory-scoped, so a growing knowledge base never floods a session.",
-      "version": "2.2.7",
-      "category": "productivity",
-      "homepage": "https://github.com/Hirannad/tenet",
-      "license": "MIT",
-      "keywords": [
-        "decisions",
-        "architecture-decision-record",
-        "adr",
-        "claude-md",
-        "instructions",
-        "knowledge",
-        "pkm",
-        "obsidian",
-        "claude-code"
-      ]
+      "description": "Records decisions with the condition that would reverse them and audits CLAUDE.md for rules nothing enforces.",
+      "category": "productivity"
     }
   ]
 }
