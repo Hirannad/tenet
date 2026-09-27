@@ -3,6 +3,12 @@
 One line per version, keyed by version rather than commit. The narrative entries up to 2.2.7 are
 in `git show tenet--v2.2.7:CHANGELOG.md`; the commit behind each version carries its reasoning.
 
+- **3.1.0** (2026-09-27): the session start prints a per-project brief instead of every universal
+  note. An observer (`tenet/observer/`) scans the last 30 days of transcripts in a detached
+  background run, scores each accepted note against what was asked in each project, adds a
+  computed core and the notes of the last 14 days, and caps the brief at 4 KB. It also records
+  which notes were cited in work sessions, in the ledger, as the input for archiving unused notes
+  later. A category that names no hub note is now reported (#13).
 - **3.0.0** (2026-09-27): rebuilt the ledger half in Python (`tenet/cli.py`) and removed the Stop
   hook that asked for a capture after every response, the PostToolUse hook, the `/tenet:tenet`
   skill, `rename-check.sh`, the locale files, the seven `.base` views and the example notes. The

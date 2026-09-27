@@ -7,7 +7,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from tenet import bootstrap, inbox, legacy_list, paths, promote, sweep  # noqa: E402
+from tenet import bootstrap, inbox, ledger, legacy_list, paths, promote, sweep  # noqa: E402
+from tenet.observer import brief, run  # noqa: E402
 
 
 def _ledger(quiet_when_absent):
@@ -28,6 +29,36 @@ def _step(name, render):
         print("\n".join(lines), flush=True)
 
 
+def briefing(vault, compact):
+    """The session-start block: the precomputed brief for this directory, or the full list with
+    a line saying why. Launches a background scan when one is due, never after a compaction."""
+    cwd = os.path.realpath(os.getcwd())
+    data = paths.data_dir()
+    if data is None:
+        return ["TENET BRIEF: CLAUDE_PLUGIN_DATA is not set for this hook, so no brief can be read or computed; the full list follows.",
+                *legacy_list.render(vault, cwd)]
+    text, matched = brief.lookup(data, cwd)
+    reason = None if compact else run.due(vault, data, matched)
+    out = []
+    if reason:
+        try:
+            run.spawn(data)
+        except OSError as exc:
+            reason = None
+            out.append(f"TENET OBSERVER FAILING: cannot launch a scan from {data}: {exc}")
+    out += run.banners(data)
+    if text is None:
+        out.append("TENET BRIEF: none computed yet" + (" — a first scan was launched" if reason else "") + "; the full list follows.")
+        return out + legacy_list.render(vault, cwd)
+    out.append(text.rstrip("\n"))
+    pending = len(ledger.md_files(vault / "inbox"))
+    if pending:
+        out.append(f"{pending} draft(s) awaiting review in inbox/. Run /tenet:tenet-capture review.")
+    if reason:
+        out.append(f"(brief refresh launched in the background: {reason})")
+    return out
+
+
 def session_start(compact):
     # A hook must never block a session, and must never fail silently either.
     try:
@@ -39,7 +70,22 @@ def session_start(compact):
         return 0
     if not compact:
         _step("promote", lambda: promote.run(vault))
-    _step("session list", lambda: legacy_list.render(vault, os.getcwd()))
+    _step("brief", lambda: briefing(vault, compact))
+    return 0
+
+
+def observe(vault, args):
+    data = paths.data_dir()
+    if data is None:
+        print("tenet: no data directory. The hook gets CLAUDE_PLUGIN_DATA from Claude Code; by hand, set TENET_DATA.")
+        return 1
+    if args.action == "status":
+        print("\n".join(f"{k}={v}" for k, v in sorted(run.status(data).items())) or "no scan has run yet")
+        return 0
+    result = run.scan(vault, data)
+    if not args.quiet:
+        print("another scan holds the lock" if result is None else
+              "scan: {} session(s), {} project brief(s), {} new use(s) recorded".format(*result))
     return 0
 
 
@@ -53,6 +99,10 @@ def main(argv=None):
     sub.add_parser("list")
     sub.add_parser("inbox")
     sub.add_parser("sweep")
+    sub.add_parser("brief")
+    obs = sub.add_parser("observe")
+    obs.add_argument("action", choices=["scan", "status"])
+    obs.add_argument("--quiet", action="store_true")
     boot = sub.add_parser("bootstrap")
     boot.add_argument("target", nargs="?")
     args = parser.parse_args(argv)
@@ -66,9 +116,12 @@ def main(argv=None):
     vault = _ledger(quiet_when_absent=False)
     if vault is None:
         return 1
+    if args.command == "observe":
+        return observe(vault, args)
     render = {
         "promote": lambda: promote.run(vault),
         "list": lambda: legacy_list.render(vault, os.getcwd()),
+        "brief": lambda: briefing(vault, compact=True),
         "inbox": lambda: inbox.render(vault),
         "sweep": lambda: sweep.render(vault),
     }[args.command]

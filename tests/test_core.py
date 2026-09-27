@@ -107,7 +107,7 @@ class Promote(VaultCase):
         self.write("2026-09-01-x.md", note(categories=("frontend",)))
         self.write("templates/Gotcha Template.md", note(categories=('""',)))
         out = "\n".join(promote.run(self.vault))
-        self.assertIn("2026-09-01-x.md — frontend", out)
+        self.assertIn("2026-09-01-x.md — frontend (not a quoted wikilink)", out)
         self.assertNotIn("Gotcha Template", out)
 
     def test_silent_when_clean_and_nags_when_maintenance_is_stale(self):
@@ -239,7 +239,7 @@ class ReviewFindings(VaultCase):
         fm = ledger.frontmatter('categories:\n- "[[Methods]]"\n- módszerek\n')
         self.assertEqual(fm["categories"], ["[[Methods]]", "módszerek"])
         self.write("2026-09-01-c.md", note(categories=()).replace("categories:", 'categories:\n- módszerek'))
-        self.assertIn("2026-09-01-c.md — módszerek", "\n".join(promote.run(self.vault)))
+        self.assertIn("2026-09-01-c.md — módszerek (not a quoted", "\n".join(promote.run(self.vault)))
 
     def test_binding_through_a_symlink_matches(self):
         (self.tmp / "real" / "proj").mkdir(parents=True)

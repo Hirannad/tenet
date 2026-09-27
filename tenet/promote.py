@@ -60,13 +60,16 @@ def run(vault):
         _move(vault, draft)
         found["promoted"].append(f"  - {draft.name} ({status})")
 
-    # A categories value that is not a quoted wikilink resolves to no hub. templates/ is
+    # A category is a hub: a quoted wikilink to a root note of that name (#13). templates/ is
     # skipped: its values are placeholders.
+    hubs = {p.stem for p in ledger.md_files(vault)}
     for note in [*ledger.md_files(vault), *ledger.md_files(inbox), *ledger.md_files(vault / "raw"), *ledger.md_files(vault / "_meta")]:
         _, block, _ = ledger.read(note)
         for item in ledger.raw_items(block, "categories"):
             if not WIKILINK.match(item):
-                found["categories"].append(f"  - {note.relative_to(vault)} — {item}")
+                found["categories"].append(f"  - {note.relative_to(vault)} — {item} (not a quoted wikilink)")
+            elif item[3:-3].split("|")[0].split("#")[0] not in hubs:
+                found["categories"].append(f"  - {note.relative_to(vault)} — {item} (no hub note of that name in the ledger root)")
 
     digests = [p for p in ledger.md_files(vault / "_meta") if p.name.startswith("maintenance-")]
     stale = ""
@@ -82,7 +85,7 @@ def run(vault):
         ("toolong", "Over the length caps — rewrite or split before asking for a verdict:"),
         ("nosection", f"Decision drafts the {conv['cap_decision_words']}-word cap could not check:"),
         ("unexpanded", "Template placeholder left literal — Obsidian expands these, the agent path does not:"),
-        ("categories", "Category value(s) that are not a quoted wikilink — these resolve to no hub:"),
+        ("categories", "Category value(s) that resolve to no hub:"),
     ):
         if found[key]:
             out += [title, *found[key]]

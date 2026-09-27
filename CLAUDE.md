@@ -14,7 +14,8 @@ calls `tenet/cli.py` and names no path of its own, and CI fails if it ever does.
 ## Layout
 
 - `tenet/`: Python 3.9, stdlib only (macOS ships 3.9). `tenet/cli.py` is the single entry point for
-  hooks and skills; a new capability is a subcommand, not a new script.
+  hooks and skills; a new capability is a subcommand, not a new script. `tenet/observer/` reads
+  transcripts out of band; the session-start hook only reads what it wrote, and must stay fast.
 - `skills/tenet-audit/scripts/`: the audit half, still bash until it is ported.
 - `vault-template/`: what `cli.py bootstrap` copies into a new ledger.
 - `tests/`: `python3 -m unittest discover -s tests -t .`

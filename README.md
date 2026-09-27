@@ -14,9 +14,10 @@ what the author runs daily, with no support and no stability promise.
 - **Every decision carries its reversal condition.** A `revisit` field, named when you decide: the
   concrete circumstance under which another choice becomes correct. "p95 passes 400 ms", not "if
   requirements change".
-- **Decisions come back at session start.** The notes in scope for the current directory are
-  listed with their reversal conditions, so a past decision is in front of the model before it
-  decides again.
+- **Decisions come back at session start, per project.** An out-of-band observer reads the last
+  30 days of your sessions and works out which notes matter in which project: content match
+  between each note and what you asked there, plus a core of the most broadly relevant decisions
+  and the notes of the last two weeks. The session-start hook only prints that precomputed brief.
 - **Nothing enters without your verdict.** `/tenet:tenet-capture` writes drafts to `inbox/`,
   `/tenet:tenet-capture review` takes your verdict, and the next session start promotes what you
   accepted.
@@ -37,12 +38,14 @@ already holds markdown or an `.obsidian/`.
 
 | When | What | Cost |
 | :-- | :-- | :-- |
-| session start | promote reviewed drafts, list the notes in scope | ~10 KB on a ledger with 58 universal notes; capped at 40 lines, and it says what it withheld |
-| after compaction | the list again | the same |
+| session start | promote reviewed drafts, print this project's brief | ~30 ms; the brief is capped at 4 KB and says what it withheld |
+| session start, when due | a detached background scan (brief older than a week, notes changed, or a new project) | ~2 s, never waited on |
+| after compaction | the brief again, no scan | the same |
 | a slash command | capture, sweep or audit | only when you invoke it |
 
-Nothing runs after each response and nothing runs on a timer. Point a scheduler at
-`/tenet:tenet-sweep` if you want it weekly.
+Nothing runs after each response and nothing runs on a timer. A stale or failing scan prints a
+`TENET BRIEF STALE` or `TENET OBSERVER FAILING` line at the top of every session until it is fixed.
+Point a scheduler at `/tenet:tenet-sweep` if you want the sweep weekly.
 
 ## Configuration
 
@@ -68,9 +71,18 @@ supported.
 grep -rnE 'curl|wget|https?://|/dev/tcp|urllib|socket|http\.client' tenet/ skills/*/scripts hooks/
 ```
 
-**What it writes:** `cli.py bootstrap` creates the ledger, and session start moves approved drafts
-from `inbox/` to the ledger root, with `git mv` when the ledger is a repository (which leaves a
-staged rename there). Nothing under `~/.claude` is written.
+**What it writes:** `cli.py bootstrap` creates the ledger; session start moves approved drafts from
+`inbox/` to the ledger root, with `git mv` when the ledger is a repository (which leaves a staged
+rename there); the observer appends to `_meta/observer/usage.jsonl` in the ledger (date, note name,
+project path, session id: which notes were used where, kept for 180 days) and writes its briefs and
+status to the data directory Claude Code assigns the plugin (`~/.claude/plugins/data/tenet-…/`).
+Nothing else under `~/.claude` is written.
+
+**What the observer reads:** your session transcripts of the last 30 days
+(`~/.claude/projects/*/*.jsonl`). Your prompts, the questions and options of AskUserQuestion calls,
+and the file paths tools touched decide which notes matter in which project; the assistant's text
+is searched only for ledger note names it cited. None of that text is stored: a brief holds note
+names and the first sentence of each note, and the usage log holds what is listed above.
 
 **What it reads from Claude's auto memory** (`~/.claude/projects/*/memory/`): the sweep selects
 notes of `type: feedback` and prints each one's project, filename and `description:` line, and
@@ -85,7 +97,11 @@ project's `CLAUDE.md` and `rules/`, `CLAUDE.local.md`, managed policy, the setti
 
 ## Known limits
 
-- The session-start list is capped by lines, not bytes. A per-project brief replaces it in 3.1.
+- Relevance is measured, not perfect: of the notes cited in work sessions over the last 30 days, the
+  brief of the project they were cited in shows about two thirds. A citation counts only when the
+  note's name appears, so a decision applied without naming it goes unseen.
+- A project gets its own brief from its first scanned session; before that the session start
+  shows the global brief (core and fresh notes).
 - `layer-check.sh` counts directives, not tokens, and undercounts a paragraph holding several rules.
 - A contradiction between two rules that share no wording is invisible to the audit.
 - With the working directory inside this repository the plugin loads twice.

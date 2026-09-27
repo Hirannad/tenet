@@ -26,6 +26,7 @@ class VaultCase(unittest.TestCase):
             (self.vault / sub).mkdir(parents=True)
         (self.vault / "templates" / "Decision Template.md").write_text(HU_TEMPLATE)
         (self.vault / "_meta" / "maintenance-2026-01-01.md").write_text("---\ntype: meta\n---\n")
+        (self.vault / "Methods.md").write_text("# Methods\n")
         self._env = dict(os.environ)
 
     def tearDown(self):

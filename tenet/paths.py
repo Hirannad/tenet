@@ -16,6 +16,20 @@ def ledger():
     return Path(DEFAULT_LEDGER).expanduser(), "default"
 
 
+def data_dir():
+    """The harness-assigned plugin data directory, or TENET_DATA for tests and manual runs."""
+    value = os.environ.get("CLAUDE_PLUGIN_DATA") or os.environ.get("TENET_DATA")
+    return Path(value).expanduser() if value else None
+
+
+def write_atomic(path, text):
+    """Write via a temporary file and rename, so a reader never sees half a file."""
+    path = Path(path)
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    tmp.write_text(text, encoding="utf-8")
+    os.replace(tmp, path)
+
+
 def config_dir():
     return Path(os.environ.get("CLAUDE_CONFIG_DIR") or "~/.claude").expanduser()
 
