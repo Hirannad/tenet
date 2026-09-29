@@ -3,6 +3,11 @@
 One line per version, keyed by version rather than commit. The narrative entries up to 2.2.7 are
 in `git show tenet--v2.2.7:CHANGELOG.md`; the commit behind each version carries its reasoning.
 
+- **3.2.0** (2026-09-29): the audit half runs in Python (`cli.py audit layers|surface|enforcement|
+  frontmatter`), so no shell script and no `jq` remain. `--record` on the surface baseline now keeps
+  every hand-written field of the baseline it replaces (#10). Symlinked rule files and directories
+  are counted, as Claude Code loads them; `audit frontmatter` skips gitignored files and reports a
+  missing directory as not examined. The audit's references went from 834 to 280 lines.
 - **3.1.0** (2026-09-27): the session start prints a per-project brief instead of every universal
   note. An observer (`tenet/observer/`) scans the last 30 days of transcripts in a detached
   background run, scores each accepted note against what was asked in each project, adds a

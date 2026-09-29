@@ -16,7 +16,7 @@ calls `tenet/cli.py` and names no path of its own, and CI fails if it ever does.
 - `tenet/`: Python 3.9, stdlib only (macOS ships 3.9). `tenet/cli.py` is the single entry point for
   hooks and skills; a new capability is a subcommand, not a new script. `tenet/observer/` reads
   transcripts out of band; the session-start hook only reads what it wrote, and must stay fast.
-- `skills/tenet-audit/scripts/`: the audit half, still bash until it is ported.
+- `tenet/audit/`: the instruction-layer checks behind `cli.py audit`.
 - `vault-template/`: what `cli.py bootstrap` copies into a new ledger.
 - `tests/`: `python3 -m unittest discover -s tests -t .`
 
@@ -35,7 +35,7 @@ calls `tenet/cli.py` and names no path of its own, and CI fails if it ever does.
   nothing. Test every check in the failing direction too.
 - Comments say why, in a line or two. History belongs in git and the CHANGELOG, not in the code.
 - Every new `.md` carries `title/type/status/updated` frontmatter unless `.claude/frontmatter-exempt`
-  covers it (`bash skills/tenet-audit/scripts/frontmatter-check.sh .`).
+  covers it (`python3 tenet/cli.py audit frontmatter .`).
 - With the working directory inside this repo the plugin loads twice (cache and tree), so hooks
   fire twice and every measured figure doubles.
 - Everything in this repository is English. The ledger carries its own language in its templates.

@@ -103,12 +103,19 @@ def main(argv=None):
     obs = sub.add_parser("observe")
     obs.add_argument("action", choices=["scan", "status"])
     obs.add_argument("--quiet", action="store_true")
+    audit = sub.add_parser("audit")
+    audit.add_argument("check", choices=["layers", "surface", "enforcement", "frontmatter"])
+    audit.add_argument("args", nargs=argparse.REMAINDER)
     boot = sub.add_parser("bootstrap")
     boot.add_argument("target", nargs="?")
     args = parser.parse_args(argv)
 
     if args.command == "hook":
         return session_start(args.compact)
+    if args.command == "audit":
+        # The audit reads instruction files, not the ledger, so it runs without one.
+        import importlib
+        return importlib.import_module(f"tenet.audit.{args.check}").main(args.args)
     if args.command == "bootstrap":
         code, lines = bootstrap.run(args.target)
         print("\n".join(lines))

@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "tenet",
   "description": "A decision ledger that comes back when its assumptions expire, plus an audit of the instruction layer that counts the rules nothing enforces. Personal tool, published as-is.",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "author": {
     "name": "József Juhász",
     "url": "https://github.com/Hirannad"

@@ -58,8 +58,8 @@ Point a scheduler at `/tenet:tenet-sweep` if you want the sweep weekly.
 
 ## Requirements
 
-macOS or Linux, Python 3.9 or newer (the macOS system one is enough). The audit scripts still need
-bash 3.2+ and, for `surface-check.sh`, `jq`. git is optional and recommended: the notes are the
+macOS or Linux, and Python 3.9 or newer (the macOS system one is enough); nothing else to install.
+git is optional and recommended: the notes are the
 database, git is the backup. Obsidian is optional; the ledger is plain markdown. Windows is not
 supported.
 
@@ -68,7 +68,7 @@ supported.
 **No script makes a network call.** No telemetry, nothing uploaded. Check it yourself:
 
 ```bash
-grep -rnE 'curl|wget|https?://|/dev/tcp|urllib|socket|http\.client' tenet/ skills/*/scripts hooks/
+grep -rnE 'curl|wget|https?://|/dev/tcp|urllib|socket|http\.client' tenet/ hooks/
 ```
 
 **What it writes:** `cli.py bootstrap` creates the ledger; session start moves approved drafts from
@@ -86,7 +86,7 @@ names and the first sentence of each note, and the usage log holds what is liste
 
 **What it reads from Claude's auto memory** (`~/.claude/projects/*/memory/`): the sweep selects
 notes of `type: feedback` and prints each one's project, filename and `description:` line, and
-nothing else from them. The audit's `layer-check.sh` reports only whether a memory line also lives
+nothing else from them. The audit's `audit layers` check reports only whether a memory line also lives
 in an instruction file; `--no-memory` skips it. `CLAUDE_CODE_DISABLE_AUTO_MEMORY` or
 `autoMemoryEnabled: false` make both read nothing, and the sweep then says it read nothing rather
 than that it found nothing.
@@ -102,7 +102,7 @@ project's `CLAUDE.md` and `rules/`, `CLAUDE.local.md`, managed policy, the setti
   note's name appears, so a decision applied without naming it goes unseen.
 - A project gets its own brief from its first scanned session; before that the session start
   shows the global brief (core and fresh notes).
-- `layer-check.sh` counts directives, not tokens, and undercounts a paragraph holding several rules.
+- `audit layers` counts directives, not tokens, and undercounts a paragraph holding several rules.
 - A contradiction between two rules that share no wording is invisible to the audit.
 - With the working directory inside this repository the plugin loads twice.
 

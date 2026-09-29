@@ -20,9 +20,6 @@ jobs:
             python3 -c "import json,sys; json.load(open(sys.argv[1])); print('ok', sys.argv[1])" "$f"
           done
 
-      - name: Shell syntax (the audit scripts, until they are ported)
-        run: for f in $(git ls-files '*.sh'); do bash -n "$f" && echo "ok $f"; done
-
       - name: Invariants
         # A skill's ! block may expand nothing but ${CLAUDE_PLUGIN_ROOT}: anything else makes the
         # preprocessor reject the block and load the skill without its body. hooks.json names no
@@ -36,13 +33,13 @@ jobs:
           exit $bad
 
       - name: Frontmatter, every tracked markdown file
-        run: bash skills/tenet-audit/scripts/frontmatter-check.sh .
+        run: python3 tenet/cli.py audit frontmatter .
 
       - name: layer-check reports absent layers as absent, never as zero
         run: |
           set -euo pipefail
-          out=$(bash skills/tenet-audit/scripts/layer-check.sh .)
+          out=$(python3 tenet/cli.py audit layers .)
           echo "$out" | grep -qE '^  measured +project \./CLAUDE\.md'
           echo "$out" | grep -qE '^  absent +user CLAUDE\.md'
           empty=$(mktemp -d); cfg=$(mktemp -d)
-          CLAUDE_CONFIG_DIR="$cfg" bash skills/tenet-audit/scripts/layer-check.sh "$empty" | grep -q 'This is not a budget of zero'
+          CLAUDE_CONFIG_DIR="$cfg" python3 tenet/cli.py audit layers "$empty" | grep -q 'This is not a budget of zero'

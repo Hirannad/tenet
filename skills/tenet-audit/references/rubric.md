@@ -1,165 +1,103 @@
-# Scoring Rubric
+# Scoring rubric
 
-Score each instruction file on 7 dimensions (100 points total). Sum → letter grade.
-Synthesized in 2026-08 from 43 CLAUDE.md files in public repositories and three industry write-ups. The source list is not reproduced here — it was collected without permission to cite, and a rubric that needs its provenance to be convincing is the wrong rubric. Judge it on whether the dimensions catch real defects in your own files.
+Seven dimensions, 100 points. Score toward full when the pass signals hold, toward zero when the
+fail signals dominate; partial credit is fine, and every deduction is stated. Each dimension ends
+with its fix; apply one fix per diff, show it, and wait for approval.
 
-For each dimension, score toward **full** when all pass-signals hold, toward **zero** when fail-signals dominate. Partial credit is fine — state the deductions.
+## 1. Size & scope — 15
 
----
+Pass: the instruction count across layers is inside the budget `cli.py audit layers` prints
+(adherence degrades uniformly past ~150–200 instructions, of which Claude Code's own prompt spends
+~50); rules live here, deep reference (schemas, full flows) is linked; every section earns its
+place. Fail: over budget or over ~300 lines and growing append-only; reference inlined; rules and
+context tangled. Deduct ~5 per major overflow. A layer the script could not measure is
+unexamined, not small.
 
-## 1. Size & scope — 15 pts
+Fix: move a situational section into a `paths:`-scoped rule, which loads only when a matching file
+is read. An `@`-import does not shrink anything: it expands at launch.
 
-What it checks: the file is short enough to stay in effective context, and behavioral **rules** are not tangled with reference **context**.
+```diff
++ # .claude/rules/api.md
++ ---
++ paths:
++   - "src/api/**/*.ts"
++ ---
++ - Validate input with the shared schema helper
+```
 
-**Pass signals**
-- Under 200 lines. That is the documented target, and adherence drops above it; ≤300 is tolerable only for a large monorepo root.
-- Rules (how to behave) live here; deep context (schemas, full deploy flows, query patterns) is in skills/docs and linked, not inlined.
-- Each section earns its place — no filler.
+A rule file without `paths:` loads unconditionally and saves nothing.
 
-**Fail signals**
-- >300 lines, or growing append-only with no pruning. (A file over 4 MiB is skipped outright, which is a different and rarer failure — if you ever see one, that is the whole finding.)
-- Schema dumps, long API tables, or tutorial-length prose inlined.
-- Mixed rules + reference in the same section.
+## 2. Mandatory content — 20
 
-Deduct ~5 pts per major overflow (length, or rules/context entanglement).
+Five points each: exact build/test commands; a structure map with generated paths marked "do NOT
+edit"; conventions (commits, naming); guardrails (secrets, generated files). Judge against the
+file's purpose: a personal global file may legitimately lack some, and the report says so.
 
-**Line count is the wrong unit on its own, and `scripts/layer-check.sh` prints the right one.**
-Lines measure the file; what degrades adherence is the number of *instructions* competing for the
-model's compliance across every layer at once. Frontier models reliably follow roughly 150–200, and
-Claude Code's own system prompt already spends about 50 of them — so a 190-line file of prose can be
-cheaper than a 90-line file of dense bullets. Score this dimension against the script's per-layer
-directive count and its budget line, not against `wc -l`. If the script could not measure a layer,
-that layer is unexamined and the score says so rather than assuming it was small.
+Fix: add the missing item, exact and copy-paste-ready; mark generated files inline.
 
-Past the budget the degradation is *uniform*: adherence falls across all instructions rather than
-only the newest, which is why trimming here is not cosmetic.
+## 3. Writing style — 15
 
-When the finding **is** length, the fix is a `paths:`-scoped rule under `.claude/rules/`, not an
-`@`-import: an imported file expands at launch and costs the same context it did inline. Recommend
-the import only to remove a duplicate.
+Pass: second person ("You always check the ticket"); hard negatives for real limits ("Never
+suggest a fix without reading the failing test"); specific and checkable rules. Fail: third person
+or passive; exhortations with no test ("write clean code"). Deduct ~5 per pervasive problem.
 
----
+Fix: rewrite the sentence in second person, as a negative if it is a bright line, and with the
+concrete check (`errors.As`, not "handle errors properly").
 
-## 2. Mandatory content — 20 pts
+## 4. Compliance technique — 15
 
-What it checks: the four things present in essentially every production file. Without these, the agent works blind.
+CLAUDE.md arrives framed as "may or may not be relevant", so a long flat file reads as optional.
+Pass: situational sections gated with a narrow `<important if="…">`; identity, structure and stack
+left unwrapped; a section that applies to a file set is a `paths:` rule instead. Fail: a long file
+with no gating; a condition that always matches (`if="you are writing code"`); foundational
+content wrapped. A short file that needs no gating gets full marks.
 
-**Required (5 pts each)**
-- **Build/test commands** — exact, copy-paste-ready (`make test`, `pnpm build`, etc.).
-- **Project structure** — key directories, one line each; auto-generated paths flagged "do NOT edit".
-- **Conventions** — commit format (conventional commits is near-universal), naming, import order.
-- **Guardrails** — the hard "never" rules (secrets handling, don't edit generated files, don't leak sensitive data).
+Fix:
 
-**Fail signals**
-- Commands missing, wrong, or vague ("run the tests").
-- No structure map, or generated files unmarked.
-- No guardrails at all.
+```diff
++ <important if="you are writing or modifying tests">
+  - Use createTestApp() for integration tests
++ </important>
+```
 
-Award per item present and accurate; partial credit if present but imprecise.
-(Note: a tiny library or a personal global file may legitimately lack some — judge against the file's purpose, and say so rather than penalizing blindly.)
+## 5. Anti-patterns absent — 15
 
----
+Deduct ~4 each: linter-enforceable rules (indentation, quotes, line length); stale snippets; vague
+instructions; architecture docs inlined.
 
-## 3. Writing style — 15 pts
+Fix: delete a linter rule and point at the tool that enforces it; replace an inlined document with
+a one-line pointer; refresh or remove a stale snippet.
 
-What it checks: phrasing that production teams found lands hardest with the model.
+## 6. Layer hygiene — 15
 
-**Pass signals**
-- **Second person**: "You always check the ticket before touching code" — not "Claude should…".
-- **Negatives for hard limits**: "Never suggest a fix without reading the failing test first" beats a soft positive.
-- **Specific & verifiable**: "Use typed errors (`RequestError`), check with `errors.As`" — not "handle errors properly".
+Pass: no rule duplicated across layers; a deviation from a global default is declared as an
+override; content sits in its layer (personal → global, team → project, machine → local); the rules
+directories and the managed policy were examined. `cli.py audit layers` counts the duplicates and
+the negation-pair candidates; deciding which layer keeps a rule, and whether a pair really
+contradicts, is this dimension's judgement. A contradiction with no shared wording is invisible to
+the script, so a full score says which part you read yourself. Deduct ~5 per duplication,
+misplacement or undeclared override.
 
-**Fail signals**
-- Third-person/passive ("Claude should consider…").
-- Vague exhortations with no actionable test ("write clean code", "be careful").
+Fix: delete the copy from the layer that should not own it; flag a deliberate deviation; move
+misplaced content, saying where and why.
 
-Deduct ~5 pts per pervasive style problem.
+```diff
++ **Override (global default is ask-first):** this project is speed-first.
+```
 
----
+## 7. Freshness — 5
 
-## 4. Compliance technique — 15 pts
+Fail: dead paths, stale versions or model ids, commands that no longer exist. Full marks unless
+concrete rot is found. Fix: correct or delete the rotten line.
 
-What it checks: use of conditional blocks so the model actually applies situational rules. CLAUDE.md is delivered wrapped in a system reminder framed as "may or may not be relevant"; long undifferentiated files get treated as optional. Conditional gating fixes this.
-
-**Pass signals**
-- Situational sections wrapped: `<important if="you are writing or modifying tests">…</important>`.
-- Conditions are **narrow** (fire only when truly relevant).
-- Foundational content (project identity, directory structure, tech stack) left **unwrapped** — it's always relevant.
-- Where a section applies to a *file set* rather than a *task*, a `paths:`-scoped rule in `.claude/rules/` is the stronger form: the harness decides when it loads, instead of the model deciding whether the condition matched.
-
-**Fail signals**
-- Everything flat, no gating, in a long file → sections get ignored.
-- Over-wrapping: `<important if="you are writing code">` matches everything, defeats the purpose.
-- Foundational content needlessly wrapped.
-
-Full marks for a short file that needs no gating; deduct when a long file with clearly situational sections uses none.
-
----
-
-## 5. Anti-patterns absent — 15 pts
-
-What it checks: the file is free of content that belongs elsewhere or has rotted.
-
-**Deduct for each present (~4 pts each)**
-- **Linter-enforceable rules** (indentation, quote style, line length) — belong in `.eslintrc`/`.prettierrc`, not here.
-- **Stale code snippets** — examples that have drifted from the real source.
-- **Vague instructions** that aren't actionable.
-- **Full architecture docs** inlined — should be `@ARCHITECTURE.md` / an ADR.
-
-**Pass signals**
-- Style enforcement delegated to tooling; examples minimal and current; heavy docs linked.
-
----
-
-## 6. Layer hygiene — 15 pts
-
-What it checks: this file plays well with the other layers. (Scored per file but informed by the cross-layer pass — see `layer-map.md`.)
-
-**Pass signals**
-- No rule duplicated from another layer.
-- Any deviation from a global default is **explicitly flagged as an override**.
-- Content matches the layer (personal prefs → global; team rules → project; machine specifics → local).
-- Content shared across layers `@`-imported once, not copy-pasted (imports deduplicate; they do not shrink).
-- Rules directories (`~/.claude/rules/`, `<repo>/.claude/rules/`) and the managed policy file examined, not assumed absent.
-
-**Fail signals**
-- Global rules restated in a project file (or vice versa).
-- Silent contradictions between layers.
-- Personal preferences committed in a team file.
-
-Deduct ~5 pts per duplication/misplacement/undeclared-override.
-
-**Two of these are counted rather than judged.** `scripts/layer-check.sh` reports the duplication
-clusters and the negation-pair override candidates, so the deduction rests on a number. What it
-does not do is decide which layer keeps a duplicate, or whether a negation pair is a genuine
-contradiction — those are this dimension's judgement, and the script says in its own output that it
-passes no verdict. A semantic contradiction with no shared wording it cannot see at all; that one is
-yours, and scoring 15/15 on a stack the script only partly covered means saying which part you read
-yourself.
-
----
-
-## 7. Freshness — 5 pts
-
-What it checks: nothing has rotted.
-
-**Fail signals**
-- Dead file paths, renamed directories.
-- Stale version pins or deprecated model IDs in examples.
-- Commands that no longer exist.
-
-Full marks unless concrete rot is found.
-
----
-
-## Grade bands
+## Grades
 
 | Total | Grade | Meaning |
-|-------|-------|---------|
-| 90–100 | A | Exemplary — leave it alone. |
-| 75–89  | B | Solid; minor targeted fixes. |
-| 60–74  | C | Works but has real gaps; worth a focused pass. |
-| 40–59  | D | Several structural problems; recommend a rewrite of the worst sections. |
-| <40    | F | Likely being ignored by the model; rework needed. |
+| :-- | :-- | :-- |
+| 90–100 | A | leave it alone |
+| 75–89 | B | minor targeted fixes |
+| 60–74 | C | real gaps; worth a focused pass |
+| 40–59 | D | structural problems; rewrite the worst sections |
+| < 40 | F | likely ignored by the model |
 
-Always pair the grade with the 2–3 highest-impact fixes — a score alone isn't actionable.
+Always pair the grade with the two or three highest-impact fixes.
