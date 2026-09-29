@@ -19,6 +19,17 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/tenet/cli.py\" hook stop",
+            "timeout": 15
+          }
+        ]
+      }
     ]
   }
 }

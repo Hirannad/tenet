@@ -18,9 +18,12 @@ what the author runs daily, with no support and no stability promise.
   30 days of your sessions and works out which notes matter in which project: content match
   between each note and what you asked there, plus a core of the most broadly relevant decisions
   and the notes of the last two weeks. The session-start hook only prints that precomputed brief.
-- **Nothing enters without your verdict.** `/tenet:tenet-capture` writes drafts to `inbox/`,
-  `/tenet:tenet-capture review` takes your verdict, and the next session start promotes what you
-  accepted.
+- **Nothing enters without your verdict, and the verdict comes to you.** When drafts wait in
+  `inbox/` and a session reaches a resting point (enough work done, nothing running in the
+  background, no open task, the last message not a question), one AskUserQuestion asks for one to
+  four verdicts, once per session: accept, discard, move to the project's auto memory, or later.
+  A script applies the answers; the model never edits a status. `/tenet:tenet-capture` writes
+  drafts by hand, and its `review` mode is the manual path.
 - **`/tenet:tenet-sweep`** judges which reversal conditions may have fired, and reports dead links,
   orphans, stale drafts and repeated process deviations. It proposes; it never edits a decision.
 - **`/tenet:tenet-audit`** scores `CLAUDE.md` against a rubric, counts rules nothing enforces,
@@ -41,9 +44,10 @@ already holds markdown or an `.obsidian/`.
 | session start | promote reviewed drafts, print this project's brief | ~30 ms; the brief is capped at 4 KB and says what it withheld |
 | session start, when due | a detached background scan (brief older than a week, notes changed, or a new project) | ~2 s, never waited on |
 | after compaction | the brief again, no scan | the same |
+| after each response | is this a resting point with drafts waiting? If so, one verdict dialog | ~0.1 s with an empty inbox; reads the transcript only when drafts wait; asks at most once per session |
 | a slash command | capture, sweep or audit | only when you invoke it |
 
-Nothing runs after each response and nothing runs on a timer. A stale or failing scan prints a
+Nothing runs on a timer. A stale or failing scan prints a
 `TENET BRIEF STALE` or `TENET OBSERVER FAILING` line at the top of every session until it is fixed.
 Point a scheduler at `/tenet:tenet-sweep` if you want the sweep weekly.
 
@@ -71,7 +75,9 @@ supported.
 grep -rnE 'curl|wget|https?://|/dev/tcp|urllib|socket|http\.client' tenet/ hooks/
 ```
 
-**What it writes:** `cli.py bootstrap` creates the ledger; session start moves approved drafts from
+**What it writes:** `cli.py bootstrap` creates the ledger; a verdict rewrites the draft's `status`
+line, deletes a discarded draft, and appends date, draft name and verdict to
+`_meta/observer/verdicts.jsonl`; session start moves approved drafts from
 `inbox/` to the ledger root, with `git mv` when the ledger is a repository (which leaves a staged
 rename there); the observer appends to `_meta/observer/usage.jsonl` in the ledger (date, note name,
 project path, session id: which notes were used where, kept for 180 days) and writes its briefs and

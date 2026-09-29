@@ -3,6 +3,11 @@
 One line per version, keyed by version rather than commit. The narrative entries up to 2.2.7 are
 in `git show tenet--v2.2.7:CHANGELOG.md`; the commit behind each version carries its reasoning.
 
+- **3.3.0** (2026-09-29): the verdict comes to the user. A Stop hook checks, cheapest condition
+  first, whether drafts wait and the session is at rest (enough work, no background task, no open
+  task or todo, the last message not a question); if so it asks for one to four verdicts in a single
+  AskUserQuestion, once per session, and `cli.py verdict apply` writes the statuses, deletes
+  discarded drafts and logs each verdict to `_meta/observer/verdicts.jsonl`.
 - **3.2.0** (2026-09-29): the audit half runs in Python (`cli.py audit layers|surface|enforcement|
   frontmatter`), so no shell script and no `jq` remain. `--record` on the surface baseline now keeps
   every hand-written field of the baseline it replaces (#10). Symlinked rule files and directories

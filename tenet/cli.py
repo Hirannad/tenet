@@ -7,7 +7,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from tenet import bootstrap, inbox, ledger, legacy_list, paths, promote, sweep  # noqa: E402
+from tenet import bootstrap, inbox, ledger, legacy_list, paths, promote, sweep, verdict  # noqa: E402
 from tenet.observer import brief, run  # noqa: E402
 
 
@@ -74,6 +74,29 @@ def session_start(compact):
     return 0
 
 
+def stop_hook():
+    """The verdict gate. Silent unless it fires; a failure is logged and shown at the next session
+    start, because printing it here would interrupt a session that is just ending a turn."""
+    import json
+    data = paths.data_dir()
+    try:
+        payload = json.loads(sys.stdin.read() or "{}")
+        vault, source = paths.ledger()
+        if data is None or not paths.check_ledger(vault, source, True)[0]:
+            return 0
+        text = verdict.gate(payload, vault, data)
+    except Exception as exc:  # noqa: BLE001
+        if data is not None:
+            log = Path(data) / "verdict" / "errors.log"
+            log.parent.mkdir(parents=True, exist_ok=True)
+            with open(log, "a") as f:
+                f.write(f"{type(exc).__name__}: {exc}\n")
+        return 0
+    if text:
+        print(json.dumps({"hookSpecificOutput": {"hookEventName": "Stop", "additionalContext": text}}))
+    return 0
+
+
 def observe(vault, args):
     data = paths.data_dir()
     if data is None:
@@ -93,13 +116,16 @@ def main(argv=None):
     parser = argparse.ArgumentParser(prog="tenet")
     sub = parser.add_subparsers(dest="command", required=True)
     hook = sub.add_parser("hook")
-    hook.add_argument("event", choices=["session-start"])
+    hook.add_argument("event", choices=["session-start", "stop"])
     hook.add_argument("--compact", action="store_true")
     sub.add_parser("promote")
     sub.add_parser("list")
     sub.add_parser("inbox")
     sub.add_parser("sweep")
     sub.add_parser("brief")
+    ver = sub.add_parser("verdict")
+    ver.add_argument("action", choices=["apply"])
+    ver.add_argument("--ticket", required=True)
     obs = sub.add_parser("observe")
     obs.add_argument("action", choices=["scan", "status"])
     obs.add_argument("--quiet", action="store_true")
@@ -111,7 +137,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
 
     if args.command == "hook":
-        return session_start(args.compact)
+        return stop_hook() if args.event == "stop" else session_start(args.compact)
     if args.command == "audit":
         # The audit reads instruction files, not the ledger, so it runs without one.
         import importlib
@@ -125,6 +151,14 @@ def main(argv=None):
         return 1
     if args.command == "observe":
         return observe(vault, args)
+    if args.command == "verdict":
+        import json
+        data = paths.data_dir()
+        if data is None:
+            print("tenet: no data directory; set TENET_DATA when running this by hand.")
+            return 1
+        print("\n".join(verdict.apply(vault, data, args.ticket, json.loads(sys.stdin.read() or "{}"))))
+        return 0
     render = {
         "promote": lambda: promote.run(vault),
         "list": lambda: legacy_list.render(vault, os.getcwd()),

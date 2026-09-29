@@ -28,6 +28,7 @@ The note model — frontmatter, statuses, what earns a note, the section order p
 
 ## Mode 2 — review (`review`, or drafts are pending)
 
+The manual path: drafts are also put to the user automatically, at a session's resting point.
 This mode owns `status`; the user answers in their own words and you write a valid value.
 
 1. For each draft show the first two sections verbatim, plus one line on scope and links. If those
