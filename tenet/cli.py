@@ -53,7 +53,7 @@ def briefing(vault, compact):
     out.append(text.rstrip("\n"))
     pending = len(ledger.md_files(vault / "inbox"))
     if pending:
-        out.append(f"{pending} draft(s) awaiting review in inbox/. Run /tenet:tenet-capture review.")
+        out.append(f"{pending} draft(s) awaiting review in inbox/. Tell the user to run /tenet:tenet-capture review: it is user-invoked, so the Skill tool cannot start it.")
     if reason:
         out.append(f"(brief refresh launched in the background: {reason})")
     return out

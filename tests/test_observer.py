@@ -188,6 +188,8 @@ class Runner(VaultCase):
         out = buf.getvalue()
         self.assertIn("TENET BRIEF · " + cwd, out)
         self.assertIn("1 draft(s) awaiting review", out)
+        # capture is user-invoked: the line must hand it to the user, or the model calls the Skill tool and fails
+        self.assertIn("Tell the user to run /tenet:tenet-capture review", out)
 
     def test_hook_without_brief_says_so_and_launches_a_scan(self):
         data = self.tmp / "data"
