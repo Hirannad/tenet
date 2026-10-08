@@ -19,10 +19,10 @@ Options: --baseline FILE, --record, --no-memory, then repo paths (none = the cur
 """
 import fnmatch
 import itertools
+import json
 import os
 import re
 import stat
-import string
 import sys
 from datetime import date
 
@@ -41,36 +41,26 @@ MIN_COMPARE_LEN = 25
 # Managed policy on macOS and Linux: the one layer no user setting can exclude.
 MANAGED = ("/Library/Application Support/ClaudeCode", "/etc/claude-code")
 
-_SP = r"[ \t\n\r\f\v]"  # POSIX [[:space:]]; \s would also match Unicode spaces
-_LOWER = str.maketrans(string.ascii_uppercase, string.ascii_lowercase)
-_LIST_ITEM = re.compile(rf"^{_SP}*([-*+]|[0-9]+\.){_SP}")
-_LIST_MARKER = re.compile(rf"^{_SP}*([-*+]|[0-9]+\.){_SP}+")
-_QUOTE = re.compile(rf"^{_SP}*>+{_SP}*")
+# re.ASCII: \s is the POSIX space class, not every Unicode space.
+_LIST_ITEM = re.compile(r"^\s*([-*+]|[0-9]+\.)\s", re.ASCII)
+_LIST_MARKER = re.compile(r"^\s*([-*+]|[0-9]+\.)\s+", re.ASCII)
+_QUOTE = re.compile(r"^\s*>+\s*", re.ASCII)
 _MARKUP = re.compile(r"[`*_~\[\]()]")
 _OTHER = re.compile(r"[^a-z0-9 ]")
-_FENCE = re.compile(rf"^{_SP}*(```|~~~)")
-_BLANK = re.compile(rf"{_SP}*")
-_HEADING = re.compile(rf"^{_SP}*#")
+_FENCE = re.compile(r"^\s*(```|~~~)", re.ASCII)
+_BLANK = re.compile(r"\s*", re.ASCII)
+_HEADING = re.compile(r"^\s*#", re.ASCII)
 _NORMATIVE = re.compile(r"(^| )(must|never|always|should|shall|require|requires|required|ensure|"
                         r"prefer|avoid|only|do not|dont|use|forbidden|mandatory|no)( |$)")
 _NEGATION = re.compile(r"(^| )(never|not|dont|no|avoid|forbidden|without)( |$)")
 
 # claudeMdExcludes is matched as text rather than parsed as JSON, so a settings file that is not
 # valid JSON still yields its patterns. The greedy lead takes the last occurrence.
-_EXCLUDES = re.compile(rf'.*"claudeMdExcludes"{_SP}*:{_SP}*\[([^]]*)\]')
-_LEAD = re.compile(rf'^{_SP}*"?')
-_TRAIL = re.compile(rf'"?{_SP}*$')
-_WAS = re.compile(rf'.*"total_directives"{_SP}*:{_SP}*([0-9]+)')
-_WHEN = re.compile(rf'.*"recorded"{_SP}*:{_SP}*"([^"]*)"')
-
-
-def _b(s):
-    return s.encode("utf-8", "surrogateescape")
+_EXCLUDES = re.compile(r'.*"claudeMdExcludes"\s*:\s*\[([^]]*)\]', re.ASCII)
 
 
 def _read(path):
-    # Bytes that are not UTF-8 survive to the report; newline="" keeps a CRLF file's \r in place.
-    with open(path, encoding="utf-8", errors="surrogateescape", newline="") as f:
+    with open(path, encoding="utf-8", errors="replace") as f:
         return f.read()
 
 
@@ -90,7 +80,7 @@ def _files_under(top, keep):
                     found.append(path)
             except OSError:
                 pass
-    return sorted(found, key=_b)  # byte order, so the report is the same under any locale
+    return sorted(found)
 
 
 def _is_md(path):
@@ -98,7 +88,7 @@ def _is_md(path):
 
 
 def normalize(line):
-    s = _LIST_MARKER.sub("", line.translate(_LOWER), count=1)
+    s = _LIST_MARKER.sub("", line.lower(), count=1)
     s = _MARKUP.sub("", _QUOTE.sub("", s, count=1))
     return " ".join(_OTHER.sub(" ", s).split())
 
@@ -147,7 +137,7 @@ def _excludes(text):
     m = _EXCLUDES.match(text.replace("\n", ""))
     if not m:
         return []
-    pats = (_TRAIL.sub("", _LEAD.sub("", p, count=1), count=1) for p in m.group(1).split(","))
+    pats = (p.strip().strip('"') for p in m.group(1).split(","))
     return [p for p in pats if p]
 
 
@@ -281,17 +271,14 @@ def run(argv):
     total = sum(r[4] for r in measured)
 
     if record:
-        def esc(s):
-            return s.replace("\\", "\\\\").replace('"', '\\"')
-        layers = ",\n".join('    "{}": {{ "files": {}, "lines": {}, "directives": {} }}'.format(esc(r[1]), *r[2:5])
-                            for r in measured)
-        out = ('{\n'
-               f'  "recorded": "{date.today().isoformat()}",\n'
-               '  "recorded_by": "tenet audit layers — counts only. The reasoning for an accepted count is the part '
-               'a diff cannot reconstruct; add it by hand.",\n'
-               f'  "budget": {{ "total": {BUDGET_TOTAL}, "system": {BUDGET_SYSTEM}, "user": {BUDGET_USER} }},\n'
-               f'  "total_directives": {total},\n  "layers": {{\n'
-               + (layers + "\n" if layers else "    ") + "  }\n}\n")
+        out = json.dumps({
+            "recorded": date.today().isoformat(),
+            "recorded_by": "tenet audit layers — counts only. The reasoning for an accepted count is the part "
+                           "a diff cannot reconstruct; add it by hand.",
+            "budget": {"total": BUDGET_TOTAL, "system": BUDGET_SYSTEM, "user": BUDGET_USER},
+            "total_directives": total,
+            "layers": {r[1]: {"files": r[2], "lines": r[3], "directives": r[4]} for r in measured},
+        }, ensure_ascii=False, indent=2) + "\n"
         err = "" if measured else (
             "audit layers: no layer could be measured, so this baseline records nothing and will read as\n"
             "unbaselined next time. Recording it now would freeze a measurement that never happened.\n")
@@ -335,7 +322,7 @@ def run(argv):
         unique = {}
         for label, n, shown in directives:
             unique.setdefault((n, label), shown)
-        ordered = sorted(unique.items(), key=lambda kv: (_b(kv[0][0]), _b(kv[0][1])))
+        ordered = sorted(unique.items())
         by_rule = {}
         for (n, label), shown in ordered:
             entry = by_rule.setdefault(n, [[], None])
@@ -343,7 +330,7 @@ def run(argv):
             entry[1] = shown
         clusters = [(len(labels), ", ".join(labels), shown) for labels, shown in by_rule.values() if len(labels) > 1]
         # Most layers first; ties in a fixed order, so two runs over the same files diff clean.
-        clusters.sort(key=lambda c: (c[0], _b("%d\t%s\t%s" % c)), reverse=True)
+        clusters.sort(reverse=True)
         if not clusters:
             p("  none — %d comparable directive(s) checked across the layers above%s\n"
               % (len(ordered), " and the auto-memory tree" if mem_state == "measured" else ""))
@@ -367,7 +354,7 @@ def run(argv):
             core = " ".join(_NEGATION.sub(" ", n).split())
             if len(core) >= 20:
                 cores.append((core, "1" if _NEGATION.search(n) else "0", label, shown))
-        cores.sort(key=lambda r: (_b(r[0]), _b("\t".join(r))))
+        cores.sort()
         for _core, group in itertools.groupby(cores, key=lambda r: r[0]):
             group = list(group)
             # Two distinct layers, not merely two lines: a file contradicting itself is a per-file finding.
@@ -400,22 +387,21 @@ def run(argv):
           "  record that goes wrong must not be pointed at the file you would lose.\n")
     else:
         try:
-            text = _read(baseline).replace("\n", "")
-        except OSError:
-            text = ""
-        was, when = _WAS.match(text), _WHEN.match(text)
-        when = when.group(1) if when and when.group(1) else "undated"
-        if not was:
+            base = json.loads(_read(baseline))
+        except (OSError, ValueError):
+            base = None
+        before = base.get("total_directives") if isinstance(base, dict) else None
+        when = (base.get("recorded") if isinstance(base, dict) else None) or "undated"
+        if not isinstance(before, int) or isinstance(before, bool):
             p("  unusable — %s exists but carries no readable total_directives. Nothing was compared.\n" % baseline)
         elif not measured:
-            p("  unmeasured — a baseline of %s exists (recorded %s) but nothing was measured today.\n"
-              % (was.group(1), when))
+            p("  unmeasured — a baseline of %d exists (recorded %s) but nothing was measured today.\n"
+              % (before, when))
         else:
-            before = int(was.group(1))
             if total > before:
-                p("  grown    %s → %d directives (+%d) since %s\n" % (was.group(1), total, total - before, when))
+                p("  grown    %d → %d directives (+%d) since %s\n" % (before, total, total - before, when))
             elif total < before:
-                p("  shrunk   %s → %d directives (%d) since %s\n" % (was.group(1), total, total - before, when))
+                p("  shrunk   %d → %d directives (%d) since %s\n" % (before, total, total - before, when))
             else:
                 p("  unchanged at %d directives since %s\n" % (total, when))
 
@@ -432,22 +418,11 @@ def run(argv):
     return "".join(out), ""
 
 
-def _emit(text, stream):
-    buf = getattr(stream, "buffer", None)
-    if buf is None:
-        stream.write(text)
-    else:  # write the bytes back as read, so a file that is not UTF-8 cannot crash the report
-        stream.flush()
-        buf.write(_b(text))
-        buf.flush()
-
-
 def main(argv):
     try:
         out, err = run(argv)
     except Exception as exc:  # noqa: BLE001 — a crash still says that nothing was measured
         out, err = f"audit layers: {type(exc).__name__}: {exc}; measured nothing.\n", ""
-    _emit(out, sys.stdout)
-    if err:
-        _emit(err, sys.stderr)
+    sys.stdout.write(out)
+    sys.stderr.write(err)
     return 0

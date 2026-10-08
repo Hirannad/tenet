@@ -13,10 +13,9 @@ import sys
 from tenet import paths
 
 SECTION, HEADER = "## The table", "Rule"
-WS = "[ \t\n\r\f\v]"
 # The alignment row may carry colons (`---`, `:--`, `--:`, `:-:`); a user copying either style
-# must not get a permanent orphan-row alarm.
-SKIP_CELL = re.compile(f"{WS}*({HEADER}|:?-+:?){WS}*")
+# must not get a permanent orphan-row alarm. re.ASCII: \s is the POSIX space class.
+SKIP_CELL = re.compile(rf"\s*({HEADER}|:?-+:?)\s*", re.ASCII)
 REFERENCES = paths.PLUGIN_ROOT / "skills" / "tenet-audit" / "references"
 
 
@@ -32,8 +31,8 @@ def norm(line):
     """Identical on both sides: drop markdown noise and the list bullet, collapse whitespace,
     lowercase, keep 40 characters, so long rules stay readable in the table and still match."""
     s = re.sub(r"[*`_]", "", line)
-    s = re.sub(f"^{WS}*-{WS}*", "", s)
-    s = re.sub(f"{WS}+", " ", s)
+    s = re.sub(r"^\s*-\s*", "", s, flags=re.ASCII)
+    s = re.sub(r"\s+", " ", s, flags=re.ASCII)
     s = s[1:] if s.startswith(" ") else s
     return s.rstrip(" ").lower()[:40]
 

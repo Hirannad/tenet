@@ -25,7 +25,8 @@ SURFACES = ("permissions_allow", "permissions_deny", "permissions_ask", "enabled
             "extraKnownMarketplaces", "global_hook_entries", "global_skills", "global_agents",
             "enabled_plugin_skills", "skills_dir_plugins", "user_scope_mcp")
 # The surfaces read out of settings.json, the only ones its pre-flight reason applies to.
-FROM_SETTINGS = SURFACES[:6] + ("enabled_plugin_skills",)
+FROM_SETTINGS = ("permissions_allow", "permissions_deny", "permissions_ask", "enabled_plugins",
+                 "extraKnownMarketplaces", "global_hook_entries", "enabled_plugin_skills")
 SETTINGS_PATHS = {"permissions_allow": (("permissions", "allow"), True),
                   "permissions_deny": (("permissions", "deny"), True),
                   "permissions_ask": (("permissions", "ask"), True),
@@ -249,12 +250,11 @@ def _was(entry):
 
 
 def _old_keys(entry):
-    value = entry.get("keys") if isinstance(entry, dict) else None
-    try:
-        items = [] if value is None or value is False else _each(value)
+    try:  # anything but a list or an object, a missing key included, names no items
+        items = _each(entry.get("keys") if isinstance(entry, dict) else None)
     except Unread:
         items = []
-    return sorted(t for t in (_text(x) for x in items) if t)
+    return sorted(t for t in map(_text, items) if t)
 
 
 def main(argv=None):
