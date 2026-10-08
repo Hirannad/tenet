@@ -8,7 +8,7 @@ from pathlib import Path
 
 from tenet import ledger
 
-WIKILINK = re.compile(r'^"\[\[[^\]]+\]\]"$')
+QUOTED_LINK = re.compile(r'^"\[\[([^\]]+)\]\]"$')
 
 
 def _git(vault, *args):
@@ -57,9 +57,10 @@ def run(vault):
     for note in [*ledger.md_files(vault), *ledger.md_files(inbox), *ledger.md_files(vault / "raw"), *ledger.md_files(vault / "_meta")]:
         _, block, _ = ledger.read(note)
         for item in ledger.raw_items(block, "categories"):
-            if not WIKILINK.match(item):
+            link = QUOTED_LINK.match(item)
+            if not link:
                 found["categories"].append(f"  - {note.relative_to(vault)} — {item} (not a quoted wikilink)")
-            elif item[3:-3].split("|")[0].split("#")[0] not in hubs:
+            elif ledger.link_target(link.group(1)) not in hubs:
                 found["categories"].append(f"  - {note.relative_to(vault)} — {item} (no hub note of that name in the ledger root)")
 
     digests = [p for p in ledger.md_files(vault / "_meta") if p.name.startswith("maintenance-")]

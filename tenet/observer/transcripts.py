@@ -37,45 +37,59 @@ def _text(content):
     return ""
 
 
-def read(path):
-    """One session as a dict: cwd, scheduled, human prompts, AskUserQuestion text,
-    touched file paths, and the assistant's own text."""
-    s = {"id": Path(path).stem, "cwd": "", "scheduled": False, "prompts": [], "asked": [], "paths": [], "assistant": []}
-    first_prompt = True
+def rows(path):
+    """A transcript's records; a line that does not parse is skipped."""
+    out = []
     with open(path, errors="replace") as f:
         for line in f:
             try:
-                r = json.loads(line)
+                out.append(json.loads(line))
             except ValueError:
+                pass
+    return out
+
+
+def _user_texts(records):
+    """(record, text) for each user record that carries text rather than a tool result."""
+    for r in records:
+        content = (r.get("message") or {}).get("content")
+        if r.get("type") != "user" or (isinstance(content, list) and any(
+                isinstance(b, dict) and b.get("type") == "tool_result" for b in content)):
+            continue
+        text = _text(content).strip()
+        if text:
+            yield r, text
+
+
+def is_scheduled(records):
+    """A scheduled task's session opens with the harness wrapper, not a person."""
+    return next((t for _, t in _user_texts(records)), "").startswith("<scheduled-task")
+
+
+def read(path):
+    """One session as a dict: cwd, scheduled, human prompts, AskUserQuestion text,
+    touched file paths, and the assistant's own text."""
+    records = rows(path)
+    s = {"id": Path(path).stem, "cwd": next((r["cwd"] for r in records if r.get("cwd")), ""),
+         "scheduled": is_scheduled(records), "asked": [], "paths": [], "assistant": []}
+    for r in records:
+        content = (r.get("message") or {}).get("content")
+        if r.get("type") != "assistant" or not isinstance(content, list):
+            continue
+        for b in content:
+            if not isinstance(b, dict):
                 continue
-            if r.get("cwd") and not s["cwd"]:
-                s["cwd"] = r["cwd"]
-            content = (r.get("message") or {}).get("content")
-            kind = r.get("type")
-            if kind == "assistant" and isinstance(content, list):
-                for b in content:
-                    if not isinstance(b, dict):
-                        continue
-                    if b.get("type") == "text":
-                        s["assistant"].append(b.get("text", ""))
-                    elif b.get("type") == "tool_use":
-                        args = b.get("input") or {}
-                        s["paths"] += [str(args[k]) for k in PATH_KEYS if isinstance(args.get(k), str)]
-                        if b.get("name") == "AskUserQuestion":
-                            for q in args.get("questions") or []:
-                                s["asked"].append(" ".join([q.get("question", "")] + [
-                                    f"{o.get('label', '')} {o.get('description', '')}" for o in q.get("options") or []]))
-            elif kind == "user":
-                if isinstance(content, list) and any(isinstance(b, dict) and b.get("type") == "tool_result" for b in content):
-                    continue
-                text = _text(content).strip()
-                if not text:
-                    continue
-                if first_prompt:
-                    s["scheduled"] = text.startswith("<scheduled-task")
-                    first_prompt = False
-                if (r.get("origin") or {}).get("kind") == "human" and not r.get("isMeta") and not text.startswith(WRAPPERS):
-                    s["prompts"].append(text)
+            if b.get("type") == "text":
+                s["assistant"].append(b.get("text", ""))
+            elif b.get("type") == "tool_use":
+                args = b.get("input") or {}
+                s["paths"] += [str(args[k]) for k in PATH_KEYS if isinstance(args.get(k), str)]
+                if b.get("name") == "AskUserQuestion":
+                    for q in args.get("questions") or []:
+                        s["asked"].append(" ".join([q.get("question", "")] + [
+                            f"{o.get('label', '')} {o.get('description', '')}" for o in q.get("options") or []]))
+    s["prompts"] = [t for r, t in _user_texts(records)
+                    if (r.get("origin") or {}).get("kind") == "human" and not r.get("isMeta") and not t.startswith(WRAPPERS)]
     return s
 
 

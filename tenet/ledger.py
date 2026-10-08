@@ -8,6 +8,7 @@ CONVENTIONS = paths.PLUGIN_ROOT / "skills" / "tenet-capture" / "references" / "c
 _KEY = re.compile(r"^([A-Za-z_][\w-]*):[ \t]*(.*)$")
 _ITEM = re.compile(r"^\s*-[ \t]*(.*)$")
 _PLACEHOLDER = re.compile(r"\{\{[^}]*\}\}")
+WIKILINK = re.compile(r"\[\[([^\]]+)\]\]")
 
 
 def unquote(value):
@@ -60,6 +61,22 @@ def raw_items(block, key):
     return items
 
 
+def link_target(inner):
+    """The note a wikilink's inner text names: alias and heading dropped."""
+    return inner.split("|")[0].split("#")[0]
+
+
+def listed(fm, key):
+    """A frontmatter list, or [] when the key is missing or holds a scalar."""
+    value = fm.get(key)
+    return value if isinstance(value, list) else []
+
+
+def title(stem):
+    """A note's readable title: its filename without the date prefix."""
+    return re.sub(r"^\d{4}-\d{2}-\d{2}-", "", stem).replace("-", " ")
+
+
 def read(path):
     """Return (frontmatter dict, raw block, body) for a note."""
     block, body = split(Path(path).read_text(encoding="utf-8", errors="replace"))
@@ -103,16 +120,12 @@ def cap_problems(fm, block, body, conv, heading):
 def section_heading(vault):
     """The Decision heading in the vault's own language: the first `##` of its Decision
     template. Returns (heading, notice); the notice is set when it fell back to English."""
-    template = Path(vault) / "templates" / "Decision Template.md"
-    try:
-        for line in template.read_text(encoding="utf-8", errors="replace").splitlines():
-            if line.startswith("## "):
-                return line[3:].strip(), None
-    except OSError:
-        pass
+    heads = template_headings(vault, "Decision")
+    if heads:
+        return heads[0], None
     return "Decision", (
-        f"tenet: no '## ' heading found in {template}; checking decisions against '## Decision'. "
-        "A vault in another language will report every decision as missing that section."
+        f"tenet: no '## ' heading found in {Path(vault) / 'templates' / 'Decision Template.md'}; checking "
+        "decisions against '## Decision'. A vault in another language will report every decision as missing that section."
     )
 
 

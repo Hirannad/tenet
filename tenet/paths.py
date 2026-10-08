@@ -23,12 +23,24 @@ def data_dir():
     return Path(value).expanduser() if value else None
 
 
-def write_atomic(path, text):
-    """Write via a temporary file and rename, so a reader never sees half a file."""
+def write_atomic(path, text, newline=None):
+    """Write via a temporary file and rename, so a reader never sees half a file. newline=""
+    writes line endings as given."""
     path = Path(path)
     tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
-    tmp.write_text(text, encoding="utf-8")
+    with open(tmp, "w", encoding="utf-8", newline=newline) as f:
+        f.write(text)
     os.replace(tmp, path)
+
+
+def observer_dir(vault):
+    """The observer's records, kept in the ledger because transcripts are gone after 30 days."""
+    return Path(vault) / "_meta" / "observer"
+
+
+def verdict_errors(data):
+    """Where the Stop hook logs a failure it must not print, for the next session start to show."""
+    return Path(data) / "verdict" / "errors.log"
 
 
 def config_dir():

@@ -3,7 +3,6 @@
 Tooling only proposes. A pattern is the user's own insight, so nothing here writes one without a
 verbatim quote of the user's, and the sweep merely lists the groups."""
 import hashlib
-import re
 from pathlib import Path
 
 from tenet import ledger
@@ -12,7 +11,10 @@ from tenet.observer import textindex
 THRESHOLD = 0.08  # cosine of two decisions' texts, on top of a `related` link between them
 MIN_SIZE, MAX_SIZE = 3, 8
 TERMS = 12  # shared terms kept per group
-WIKILINK = re.compile(r"\[\[([^\]|#]+)")
+
+
+def _targets(text):
+    return {ledger.link_target(t) for t in ledger.WIKILINK.findall(text)}
 
 
 def _covered(vault, members):
@@ -22,7 +24,7 @@ def _covered(vault, members):
         fm, _, _ = ledger.read(p)
         if fm.get("type") != "pattern":
             continue
-        linked = set(WIKILINK.findall(p.read_text(encoding="utf-8", errors="replace")))
+        linked = _targets(p.read_text(encoding="utf-8", errors="replace"))
         if len(names & linked) >= 2:
             return True
     return False
@@ -46,7 +48,7 @@ def candidates(vault, threshold=THRESHOLD):
             # Headings are template words every decision shares, so they would swamp the terms.
             prose = "\n".join(l for l in body.splitlines() if not l.startswith("## "))
             docs[p] = p.stem.replace("-", " ") + " " + prose
-            related[p] = set(WIKILINK.findall("\n".join(ledger.raw_items(block, "related"))))
+            related[p] = _targets("\n".join(ledger.raw_items(block, "related")))
     vec = textindex.vectors(docs)
     by_stem = {p.stem: p for p in docs}
     parent = {p: p for p in docs}

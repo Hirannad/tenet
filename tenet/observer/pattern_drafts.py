@@ -19,7 +19,7 @@ SENTENCE = re.compile(r"(?<=[.!?])\s+|\n+")
 
 
 def _emitted_file(vault):
-    return Path(vault) / "_meta" / "observer" / "patterns.json"
+    return paths.observer_dir(vault) / "patterns.json"
 
 
 def _emitted(vault):
@@ -48,7 +48,7 @@ def find_quote(group, sessions):
 def _draft(vault, group, quote):
     _, text, day, root = quote
     heads = ledger.template_headings(vault, "Pattern")
-    cats = Counter(c for m in group["members"] for c in (ledger.read(m)[0].get("categories") or []) if c)
+    cats = Counter(c for m in group["members"] for c in ledger.listed(ledger.read(m)[0], "categories") if c)
     top = cats.most_common(1)[0][0] if cats else ""
     derived = "".join(f'\n  - "[[{m.stem}]]"' for m in group["members"])
     blocks = [f"## {h}\n" for h in heads]

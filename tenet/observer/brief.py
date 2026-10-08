@@ -39,8 +39,8 @@ def corpus(vault):
             continue
         sections = ledger.sections(body)
         lead = sections.get(heading) or next(iter(sections.values()), "")
-        title = re.sub(r"^\d{4}-\d{2}-\d{2}-", "", path.stem).replace("-", " ")
-        links = " ".join(v for k in ("categories", "related") for v in (fm.get(k) if isinstance(fm.get(k), list) else []))
+        title = ledger.title(path.stem)
+        links = " ".join(v for k in ("categories", "related") for v in ledger.listed(fm, k))
         terms = Counter()
         for text, weight in ((title, 3), (lead, 2), (fm.get("revisit") or "", 1.5), (body, 1), (links, 1)):
             for token, n in Counter(textindex.tokens(text)).items():

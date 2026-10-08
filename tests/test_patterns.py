@@ -90,6 +90,13 @@ class Drafts(PatternCase):
         self.assertEqual(pattern_drafts.write(self.vault, [prompt_session(self.QUOTE)])[1], 0)
         self.assertEqual(ledger.md_files(self.vault / "inbox"), [])
 
+    def test_a_scalar_category_is_not_read_letter_by_letter(self):
+        for f in ledger.notes(self.vault):
+            f.write_text(f.read_text().replace('categories:\n  - "[[Methods]]"', 'categories: "[[Methods]]"'))
+        pattern_drafts.write(self.vault, [prompt_session(self.QUOTE)])
+        (draft,) = ledger.md_files(self.vault / "inbox")
+        self.assertFalse(any(len(c) == 1 for c in ledger.read(draft)[0]["categories"]))
+
 
 if __name__ == "__main__":
     unittest.main()

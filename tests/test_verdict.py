@@ -176,6 +176,12 @@ class Apply(VaultCase):
         after = path.read_text()
         self.assertEqual(after, before.replace("status: proposed", "status: accepted", 1))
 
+    def test_set_status_never_touches_the_body(self):
+        path = self.write("inbox/y.md", "---\ntype: decision\n---\n\nstatus: a line of prose\n")
+        with self.assertRaises(ValueError):
+            verdict.set_status(path, "accepted")
+        self.assertIn("status: a line of prose", path.read_text())
+
     def test_each_answer_does_what_it_says(self):
         ticket, qs = self.ask(12)
         out = verdict.apply(self.vault, self.data, ticket, {"answers": {

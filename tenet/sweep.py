@@ -7,8 +7,6 @@ from pathlib import Path
 
 from tenet import ledger, patterns, paths
 
-WIKILINK = re.compile(r"\[\[([^\]]+)\]\]")
-
 
 def _feedback():
     root, note = paths.memory_root()
@@ -64,16 +62,15 @@ def render(vault):
     out += ["", "--- categories tally ---"]
     tally = Counter()
     for fm, _, _ in parsed.values():
-        cats = fm.get("categories")
-        tally.update(WIKILINK.sub(r"\1", c) for c in (cats if isinstance(cats, list) else []) if c)
+        tally.update(ledger.WIKILINK.sub(r"\1", c) for c in ledger.listed(fm, "categories") if c)
     out += [f"  {count:>4} {cat}" for cat, count in tally.most_common()]
 
     out += ["", "--- dead wikilinks ---"]
     targets = set()
     for f in [*roots, *ledger.md_files(vault / "_meta"), *drafts]:
-        targets |= set(WIKILINK.findall(f.read_text(encoding="utf-8", errors="replace")))
+        targets |= set(ledger.WIKILINK.findall(f.read_text(encoding="utf-8", errors="replace")))
     existing = {p.stem for d in (vault, vault / "_meta", vault / "inbox") for p in ledger.md_files(d)}
-    out += [f"  {t}" for t in sorted(targets) if t.split("|")[0].split("#")[0] not in existing]
+    out += [f"  {t}" for t in sorted(targets) if ledger.link_target(t) not in existing]
 
     out += ["", "--- pattern candidates (decisions that may share an insight) ---", *patterns.render(vault)]
 

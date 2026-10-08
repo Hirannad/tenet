@@ -10,6 +10,7 @@ from datetime import date
 from pathlib import Path
 
 from tenet import ledger, paths, promote
+from tenet.observer import transcripts
 
 MIN_WORK = 20
 INTERACTIVE = ("claude-desktop", "cli")
@@ -24,17 +25,6 @@ def batch_size(backlog):
     return 0
 
 
-def _rows(transcript):
-    rows = []
-    with open(transcript, errors="replace") as f:
-        for line in f:
-            try:
-                rows.append(json.loads(line))
-            except ValueError:
-                pass
-    return rows
-
-
 def _blocks(row):
     content = (row.get("message") or {}).get("content")
     return [b for b in content if isinstance(b, dict)] if isinstance(content, list) else []
@@ -47,12 +37,11 @@ def busy(payload):
     transcript = payload.get("transcript_path")
     if not transcript or not os.path.isfile(transcript):
         return "no transcript"
-    rows = _rows(transcript)
+    rows = transcripts.rows(transcript)
     entry = next((r["entrypoint"] for r in rows if r.get("entrypoint")), None)
     if entry not in INTERACTIVE:
         return "not interactive"
-    first = next((r for r in rows if r.get("type") == "user" and isinstance((r.get("message") or {}).get("content"), str)), None)
-    if first and first["message"]["content"].startswith("<scheduled-task"):
+    if transcripts.is_scheduled(rows):
         return "scheduled"
     assistants = [r for r in rows if r.get("type") == "assistant"]
     if len(assistants) < MIN_WORK:
@@ -159,7 +148,7 @@ def gate(payload, vault, data):
         return None
     items, questions = [], []
     for i, draft in enumerate(drafts[:k], 1):
-        title = re.sub(r"^\d{4}-\d{2}-\d{2}-", "", draft.stem).replace("-", " ")
+        title = ledger.title(draft.stem)
         question = f"{title}: verdict?"
         if any(it["question"] == question for it in items):  # AskUserQuestion needs unique texts
             question = f"{title} ({draft.name[:10]}): verdict?"
@@ -190,7 +179,7 @@ def gate(payload, vault, data):
 
 
 def _log(vault, draft, verdict):
-    log = Path(vault) / "_meta" / "observer" / "verdicts.jsonl"
+    log = paths.observer_dir(vault) / "verdicts.jsonl"
     log.parent.mkdir(parents=True, exist_ok=True)
     with open(log, "a", encoding="utf-8") as f:
         f.write(json.dumps({"date": date.today().isoformat(), "draft": draft, "verdict": verdict}, ensure_ascii=False) + "\n")
@@ -203,13 +192,11 @@ def set_status(path, value):
     block, _ = ledger.split(text.replace("\r\n", "\n"))
     if not block:
         raise ValueError(f"{path} has no frontmatter")
-    new_text, n = re.subn(r"^status:[^\r\n]*", f"status: {value}", text, count=1, flags=re.M)
+    end = text.find("\n---", 3)  # the closing fence: a status line in the body is prose
+    head, n = re.subn(r"^status:[^\r\n]*", f"status: {value}", text[:end], count=1, flags=re.M)
     if not n:
         raise ValueError(f"{path} has no status line")
-    tmp = Path(path).with_name(f".{Path(path).name}.tmp")
-    with open(tmp, "w", encoding="utf-8", newline="") as f:
-        f.write(new_text)
-    os.replace(tmp, path)
+    paths.write_atomic(path, head + text[end:], newline="")
 
 
 def _remove(vault, data, draft):
@@ -234,7 +221,7 @@ def apply(vault, data, ticket, result):
     if result.get("afk"):
         return ["VERDICT: none applied — the dialog timed out, which is not a verdict."]
     answers = result.get("answers") or {}
-    vault, deferred, out, counts = Path(vault), _deferrals(data), [], {}
+    vault, deferred, out, counts, accepted = Path(vault), _deferrals(data), [], {}, []
     for item in spec["items"]:
         draft = vault / "inbox" / item["draft"]
         answer = answers.get(item["question"])
@@ -245,6 +232,7 @@ def apply(vault, data, ticket, result):
             continue
         if answer == "Accept":
             set_status(draft, "accepted")
+            accepted.append(item["draft"])
             verdict = "accepted"
         elif answer == "Discard":
             _remove(vault, data, draft)
@@ -267,7 +255,9 @@ def apply(vault, data, ticket, result):
             _log(vault, item["draft"], verdict)
     paths.write_atomic(_state(data) / "deferrals.json", json.dumps(deferred))
     (_state(data) / "tickets" / f"{ticket}.json").unlink()  # a ticket answers once
-    moved = [line for line in promote.run(vault) if line.startswith("  - ") and "(accepted)" in line] if counts.get("accepted") else []
+    if accepted:
+        promote.run(vault)
+    moved = [name for name in accepted if (vault / name).exists()]
     left = len(eligible(vault))
     summary = ", ".join(f"{n} {v}" for v, n in counts.items()) or "nothing answered"
     return [*out, f"VERDICT: {summary}; {len(moved)} promoted; {left} draft(s) left."]

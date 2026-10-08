@@ -93,7 +93,7 @@ def banners(data):
         out.append(f"TENET OBSERVER FAILING: the background scan launched {date.fromtimestamp(spawned).isoformat()} never recorded a start. Run `python3 tenet/cli.py observe scan` by hand to see why.")
     if st.get("error"):
         out.append(f"TENET OBSERVER FAILING: {st['error']}")
-    errors = Path(data) / "verdict" / "errors.log"
+    errors = paths.verdict_errors(data)
     if errors.is_file() and errors.stat().st_size and now - errors.stat().st_mtime < STALE_DAYS * 86400:
         out.append(f"TENET VERDICT GATE: {len(errors.read_text(errors='replace').splitlines())} error(s) logged in {errors}")
     if last_ok and now - last_ok > STALE_DAYS * 86400:

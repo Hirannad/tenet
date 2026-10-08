@@ -85,7 +85,7 @@ def stop_hook():
         text = verdict.gate(payload, vault, data)
     except Exception as exc:  # noqa: BLE001
         if data is not None:
-            log = Path(data) / "verdict" / "errors.log"
+            log = paths.verdict_errors(data)
             log.parent.mkdir(parents=True, exist_ok=True)
             with open(log, "a") as f:
                 f.write(f"{type(exc).__name__}: {exc}\n")

@@ -11,11 +11,10 @@ from pathlib import Path
 from tenet import ledger, paths
 
 KEEP_DAYS = 180
-WIKILINK = re.compile(r"\[\[([^\]|#]+)")
 
 
 def _files(vault):
-    d = Path(vault) / "_meta" / "observer"
+    d = paths.observer_dir(vault)
     return d / "usage.jsonl", d / "state.json"
 
 
@@ -73,13 +72,13 @@ def update(vault, sessions, oldest):
                 seen.add((slug, s["id"]))
     for draft in ledger.md_files(vault / "inbox"):
         fm, _, _ = ledger.read(draft)
-        related = fm.get("related") if isinstance(fm.get("related"), list) else []
-        for link in related:
-            m = WIKILINK.search(link)
-            if m and m.group(1) in slugs and (m.group(1), draft.name) not in seen:
-                fresh.append({"date": fm.get("created") or date.today().isoformat(), "note": m.group(1),
+        for link in ledger.listed(fm, "related"):
+            m = ledger.WIKILINK.search(link)
+            note = m and ledger.link_target(m.group(1))
+            if note in slugs and (note, draft.name) not in seen:
+                fresh.append({"date": fm.get("created") or date.today().isoformat(), "note": note,
                               "project": "draft", "source": draft.name})
-                seen.add((m.group(1), draft.name))
+                seen.add((note, draft.name))
     cutoff = (date.today() - timedelta(days=KEEP_DAYS)).isoformat()
     kept = [e for e in events + fresh if e["date"] >= cutoff]
     body = "".join(json.dumps(e, ensure_ascii=False) + "\n" for e in sorted(kept, key=lambda e: e["date"]))
