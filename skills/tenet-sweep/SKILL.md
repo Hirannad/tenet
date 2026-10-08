@@ -1,6 +1,6 @@
 ---
 name: tenet-sweep
-description: Weekly housekeeping for the decision ledger. Sweeps for decisions whose reversal condition may now be met, plus dead links, orphans, stale drafts, unjustified raw files and an over-grown universal layer, then writes a short digest and proposes fixes without applying them. Use when the user asks for the weekly sweep or vault maintenance, wants to look through or tidy up their own decision notes, asks which recorded conditions may have fired since the last pass, or when a session-start notice says maintenance is overdue. It reviews the notes as a set; it does not search them for a fact.
+description: Weekly housekeeping for the decision ledger. Sweeps for decisions whose reversal condition may now be met, plus dead links, orphans, stale drafts, and unjustified raw files, then writes a short digest and proposes fixes without applying them. Use when the user asks for the weekly sweep or vault maintenance, wants to look through or tidy up their own decision notes, asks which recorded conditions may have fired since the last pass, or when a session-start notice says maintenance is overdue. It reviews the notes as a set; it does not search them for a fact.
 allowed-tools: Read, Write, Edit, Grep, Glob, Bash(python3 ${CLAUDE_PLUGIN_ROOT}/tenet/cli.py *)
 ---
 
@@ -37,14 +37,12 @@ Run all of them, then write the digest. Detail for each is in
 4. **Orphans.** Notes nothing links to and which link to nothing.
 5. **Unjustified raw files.** Files in `raw/` with no companion `source` note explaining why
    they are kept.
-6. **Universal layer growth.** If there are more than ~15 `universal` notes, say so. An
-   unchecked universal layer recreates the leakage that scoping exists to prevent.
-7. **Pattern candidates.** Three or more decisions sharing a rationale suggest an undistilled
+6. **Pattern candidates.** Three or more decisions sharing a rationale suggest an undistilled
    principle. **Propose it as a question, never write the pattern.** A pattern must be the
    user's own insight; drafting one on their behalf breaks the rule the whole vault rests on.
-8. **Topic candidates.** Five or more notes sharing a category with no hub note suggest a topic
-   worth promoting. Propose the hub and the binding line.
-9. **Repeated process deviations.** Read the `feedback` entries from Claude Code's auto memory
+7. **Topic candidates.** Five or more notes sharing a category with no hub note suggest a topic
+   worth promoting. Propose the hub note.
+8. **Repeated process deviations.** Read the `feedback` entries from Claude Code's auto memory
     (the inventory dumps them) together with `_meta/retro.md`. If two or more name the same
     convention **or the same error class**, it is not working — writing it down was not enough.
     If the dump says it could not read the record, that is the finding; no entries is not no

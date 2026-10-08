@@ -2,7 +2,6 @@
 type: open
 created: {{date:YYYY-MM-DD}}
 status: proposed
-scope: domain
 categories:
   - ""
 resolves:

@@ -8,7 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from tenet import bootstrap, ledger, legacy_list, paths, promote, sweep  # noqa: E402
+from tenet import bootstrap, ledger, paths, promote, sweep  # noqa: E402
 from tests.helpers import VaultCase, note  # noqa: E402
 
 CLI = Path(__file__).resolve().parent.parent / "tenet" / "cli.py"
@@ -119,33 +119,6 @@ class Promote(VaultCase):
         self.assertIn("Maintenance is due (last run 2026-01-01). Run /tenet:tenet-sweep.", promote.run(self.vault))
 
 
-class LegacyList(VaultCase):
-    def test_universal_listed_gotcha_excluded(self):
-        self.write("2026-09-01-u.md", note())
-        self.write("2026-09-01-g.md", note(kind="gotcha"))
-        out = legacy_list.render(self.vault, "/nowhere")
-        self.assertIn("- [[2026-09-01-u]] (decision, accepted) — revisit when: ha X", out)
-        self.assertFalse(any("2026-09-01-g" in line for line in out))
-
-    def test_cap_says_what_it_withheld(self):
-        for i in range(legacy_list.MAX_LIST + 3):
-            self.write(f"2026-09-01-n{i:02}.md", note())
-        self.assertIn("(3 further universal note(s) withheld", "\n".join(legacy_list.render(self.vault, "/")))
-
-    def test_bindings_longest_prefix_and_examples_ignored(self):
-        self.write("_meta/bindings.md", "```\n- `/code` → [[Fence]]\n```\n<!--\n- `/code` → [[Comment]]\n-->\n"
-                   "- `/code` → [[Repo]]\n- `/code/pkg` → [[Pkg]]\n")
-        self.assertEqual(legacy_list.bound_topics(self.vault, "/code/pkg/src"), "[[Pkg]]")
-        self.assertEqual(legacy_list.bound_topics(self.vault, "/code/other"), "[[Repo]]")
-        self.assertEqual(legacy_list.bound_topics(self.vault, "/codex"), "")
-
-    def test_topic_note_in_scope_only_where_bound(self):
-        self.write("_meta/bindings.md", "- `/code` → [[Buxa]]\n")
-        self.write("2026-09-01-d.md", note(scope="domain", categories=('"[[Buxa]]"',)))
-        self.assertIn("## Topic notes in scope", legacy_list.render(self.vault, "/code"))
-        self.assertEqual(legacy_list.render(self.vault, "/elsewhere"), [])
-
-
 class Bootstrap(VaultCase):
     def test_refuses_existing_notes_and_obsidian(self):
         self.assertIn("markdown", bootstrap.refusal(self.vault))
@@ -235,10 +208,8 @@ class ReviewFindings(VaultCase):
         self.assertEqual(promote.run(self.vault), [])
         self.assertTrue((self.vault / "inbox" / ".hidden.md").exists())
 
-    def test_non_utf8_bindings_and_template_do_not_crash(self):
-        (self.vault / "_meta" / "bindings.md").write_bytes(b"- `/code` \xe2\x86\x92 [[Repo]] \xff\n")
+    def test_non_utf8_template_does_not_crash(self):
         (self.vault / "templates" / "Decision Template.md").write_bytes(b"## D\xf6nt\xe9s\n")
-        legacy_list.render(self.vault, "/code")
         promote.run(self.vault)
 
     def test_column_zero_list_items_are_read(self):
@@ -246,12 +217,6 @@ class ReviewFindings(VaultCase):
         self.assertEqual(fm["categories"], ["[[Methods]]", "módszerek"])
         self.write("2026-09-01-c.md", note(categories=()).replace("categories:", 'categories:\n- módszerek'))
         self.assertIn("2026-09-01-c.md — módszerek (not a quoted", "\n".join(promote.run(self.vault)))
-
-    def test_binding_through_a_symlink_matches(self):
-        (self.tmp / "real" / "proj").mkdir(parents=True)
-        os.symlink(self.tmp / "real", self.tmp / "link")
-        self.write("_meta/bindings.md", f"- `{self.tmp}/link/proj` → [[Proj]]\n")
-        self.assertEqual(legacy_list.bound_topics(self.vault, os.path.realpath(self.tmp / "link" / "proj")), "[[Proj]]")
 
     def test_repeated_key_keeps_the_first_value(self):
         self.assertEqual(ledger.frontmatter("status: accepted\nstatus: proposed\n")["status"], "accepted")
@@ -269,7 +234,7 @@ class ReviewFindings(VaultCase):
         finally:
             promote.run = original
         self.assertIn("TENET ERROR: promote failed: ZeroDivisionError", buf.getvalue())
-        self.assertIn("- [[2026-09-01-u]]", buf.getvalue())
+        self.assertIn("LEDGER:", buf.getvalue())
 
 if __name__ == "__main__":
     unittest.main()

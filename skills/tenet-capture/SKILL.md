@@ -23,7 +23,7 @@ The note model — frontmatter, statuses, what earns a note, the section order p
 1. Apply the three gates from the conventions. Most sessions pass none; say so and stop.
 2. Write each qualifying note to `inbox/YYYY-MM-DD-short-slug.md` from the matching template in the
    ledger's `templates/`, with `status: proposed` and today's real date in every `{{date}}` slot.
-3. Fill `revisit` (decisions) or `resolves` (open questions). Propose `scope` and say why.
+3. Fill `revisit` (decisions) or `resolves` (open questions).
 4. Show the user what you wrote. Never promote in the same breath as writing.
 
 ## Mode 2 — review (`review`, or drafts are pending)
@@ -31,7 +31,7 @@ The note model — frontmatter, statuses, what earns a note, the section order p
 The manual path: drafts are also put to the user automatically, at a session's resting point.
 This mode owns `status`; the user answers in their own words and you write a valid value.
 
-1. For each draft show the first two sections verbatim, plus one line on scope and links. If those
+1. For each draft show the first two sections verbatim, plus one line on links. If those
    two sections do not make the choice clear, the note failed the 30-second test: offer a rewrite
    instead of asking for a verdict.
 2. Ask for accept, reject, unclear, discard or edit. Write `accepted`, `rejected` or `unclear`.

@@ -2,7 +2,6 @@
 type: gotcha
 created: {{date:YYYY-MM-DD}}
 status: proposed
-scope: universal
 categories:
   - ""
 related:

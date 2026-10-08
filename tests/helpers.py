@@ -8,11 +8,11 @@ from pathlib import Path
 HU_TEMPLATE = "---\ntype: decision\n---\n\n## Döntés\n\n## Mikor kell újragondolni\n"
 
 
-def note(kind="decision", status="accepted", scope="universal", decision_words=10, heading="Döntés",
+def note(kind="decision", status="accepted", decision_words=10, heading="Döntés",
          categories=('"[[Methods]]"',), revisit="ha X", extra=""):
     cats = "".join(f"\n  - {c}" for c in categories)
     body = f"## {heading}\n\n" + " ".join(["szó"] * decision_words) + "\n" if heading else "## Más\n\nszöveg\n"
-    return (f"---\ntype: {kind}\ncreated: 2026-09-01\nstatus: {status}\nscope: {scope}\n"
+    return (f"---\ntype: {kind}\ncreated: 2026-09-01\nstatus: {status}\n"
             f"categories:{cats}\nrevisit: {revisit}\n{extra}---\n\n{body}")
 
 

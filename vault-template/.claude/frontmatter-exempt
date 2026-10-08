@@ -1,2 +1,2 @@
-# A ledger runs its own schema (type/created/status/scope), not the repo-doc one.
+# A ledger runs its own schema (type/created/status), not the repo-doc one.
 *

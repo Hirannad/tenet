@@ -1,6 +1,6 @@
 # Maintenance checks
 
-Nine checks. Each says what to look for, and what the report line should say.
+Eight checks. Each says what to look for, and what the report line should say.
 
 ## 1. Revisit sweep
 
@@ -53,25 +53,7 @@ violate the admission rule and should be either justified or removed.
 Restate the rule when reporting: raw material is admitted only when it is **not retrievable
 elsewhere**, or when it is an **intermediate work product** with no other home.
 
-## 6. Universal layer growth
-
-Count `scope: universal` notes. Above ~15, report it.
-
-**Gotchas do not count**, and the inventory line is labelled that way. They are `universal` by
-default, but the session-start list skips the type, so they load nothing into any session. Counting them
-would raise the number this check watches without a byte more context being loaded — a false alarm
-measured against the check's own reason for existing.
-
-**Not a ratio.** The first batch of notes was 100% universal — they were all genuinely about how
-the user works — so a one-third threshold fires permanently and trains him to ignore the digest.
-An absolute count is what actually measures the risk: context loaded into every session.
-
-The universal layer is visible in every session in every directory. That is what makes it
-valuable and what makes it dangerous: if everything is universal, nothing is scoped, and the
-leakage the design prevents comes straight back. Suggest the specific notes that look most
-like project decisions wearing a universal label.
-
-## 7. Pattern candidates
+## 6. Pattern candidates
 
 Three or more decisions sharing a rationale suggest an undistilled principle. The inventory's
 `pattern candidates` section lists the groups it found (a `related` link plus text overlap, 3-8
@@ -90,18 +72,15 @@ user's own quote exists; that draft arrives in `inbox/`, so do not write one her
 A pattern records the user's own insight. Authoring one for them — however well — replaces their
 thinking with yours, which is precisely what this vault exists to prevent.
 
-## 8. Topic candidates
+## 7. Topic candidates
 
 Five or more notes sharing a `categories` value with no hub note. Propose:
 
 - a hub note named **exactly** after the category — `Methods.md` in the vault root, with
-  `type: meta` and no `scope`. The name is not cosmetic: the dead-link check resolves `[[Methods]]`
+  `type: meta`. The name is not cosmetic: the dead-link check resolves `[[Methods]]`
   against `./Methods.md`, `_meta/Methods.md` and `inbox/Methods.md` and nowhere else, so an
   `_index` suffix, a date prefix or a `hubs/` folder all leave the link dead forever. `type: meta`
-  keeps it out of the Everything view, and omitting `scope` keeps it out of the session-start list
-  — a hub on `scope: universal` would load in every directory and count against the ~15 threshold
-  in check 6.
-- the `bindings.md` line that would scope it to a directory, if an obvious one exists.
+  keeps it out of the brief, which lists decisions, patterns, gotchas and open questions only.
 
 Hubs carry the category's meaning and its boundary against neighbouring categories. They do **not**
 list the notes: a hand-written index goes stale. Being
@@ -111,7 +90,7 @@ it is bookkeeping rather than knowledge.
 Topics are meant to emerge from accumulated material rather than be designed up front. This
 check is how that happens. It is a proposal — the user approves the promotion.
 
-## 9. Repeated process deviations
+## 8. Repeated process deviations
 
 Corrections are no longer collected here. Claude Code's own auto memory records them as `feedback`
 notes, and duplicating that was the redundancy 2.0.0 removed. This check reads them and does the

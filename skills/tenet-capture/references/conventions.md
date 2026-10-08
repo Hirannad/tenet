@@ -8,7 +8,7 @@ cap_note_words: 400
 # The note model
 
 The one place the ledger's conventions are stated. The frontmatter above is read by
-`tenet/promote.py`; change a value there and the check changes with it. A rule marked
+`tenet/ledger.py` for promote, the sweep and the verdict; change a value there and the check changes with it. A rule marked
 *(checked)* has a mechanism; the rest are judgement calls, and are marked as such by being
 unmarked.
 
@@ -22,7 +22,6 @@ Property names and every value a script compares are English. Free text (`revisi
 | `type` | `decision`, `pattern`, `open`, `source`, `gotcha` |
 | `created` | `YYYY-MM-DD` |
 | `status` | the list below *(checked)* |
-| `scope` | `universal` or `domain` (until the per-project brief derives it) |
 | `categories` | block list of `"[[Plural Noun]]"`, quoted *(checked)*; the link resolves to a hub note of that name |
 | `related` | block list of wikilinks; link generously |
 
@@ -87,12 +86,6 @@ real dates, never a literal `{{date}}` *(checked)*.
 A finding from research, a tool or an assistant is evidence: it goes in a decision's Why with
 its source named. A `pattern` records only the user's own insight, in their own formulation.
 This boundary is what lets them tell their thinking apart from what they were handed.
-
-## Scope
-
-`domain` by default: visible only where `_meta/bindings.md` binds it. `universal` is for how the
-user works (methodology, architecture, structure) and is visible everywhere. A gotcha is
-`universal` and stays out of the session-start list.
 
 ## Layout and naming
 

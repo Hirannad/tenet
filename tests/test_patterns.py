@@ -15,7 +15,7 @@ SHARED = "ellenpróba második kör csendben elcsúszó szám ellenőrzés kapu"
 def decision(related, extra_words):
     body = f"## Döntés\n\nrövid\n\n## Miért\n\n{SHARED} {extra_words}\n"
     rel = "".join(f'  - "[[{r}]]"\n' for r in related)
-    return (f"---\ntype: decision\ncreated: 2026-09-01\nstatus: accepted\nscope: universal\ncategories:\n"
+    return (f"---\ntype: decision\ncreated: 2026-09-01\nstatus: accepted\ncategories:\n"
             f'  - "[[Methods]]"\nrevisit: ha X\nrelated:\n{rel}---\n\n{body}')
 
 

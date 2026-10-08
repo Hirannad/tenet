@@ -7,7 +7,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from tenet import bootstrap, inbox, ledger, legacy_list, paths, promote, sweep, verdict  # noqa: E402
+from tenet import bootstrap, inbox, ledger, paths, promote, sweep, verdict  # noqa: E402
 from tenet.observer import brief, run  # noqa: E402
 
 
@@ -30,14 +30,12 @@ def _step(name, render):
 
 
 def briefing(vault, compact):
-    """The session-start block: the precomputed brief for this directory, or the full list with
-    a line saying why. Launches a background scan when one is due, never after a compaction."""
-    cwd = os.path.realpath(os.getcwd())
+    """The session-start block: the precomputed brief for this directory. Launches a background
+    scan when one is due, never after a compaction."""
     data = paths.data_dir()
     if data is None:
-        return ["TENET BRIEF: CLAUDE_PLUGIN_DATA is not set for this hook, so no brief can be read or computed; the full list follows.",
-                *legacy_list.render(vault, cwd)]
-    text, matched = brief.lookup(data, cwd)
+        return [f"LEDGER: {vault}", "TENET BRIEF: CLAUDE_PLUGIN_DATA is not set for this hook, so no brief can be read or computed."]
+    text, matched = brief.lookup(data, os.path.realpath(os.getcwd()))
     reason = None if compact else run.due(vault, data, matched)
     out = []
     if reason:
@@ -48,13 +46,13 @@ def briefing(vault, compact):
             out.append(f"TENET OBSERVER FAILING: cannot launch a scan from {data}: {exc}")
     out += run.banners(data)
     if text is None:
-        out.append("TENET BRIEF: none computed yet" + (" — a first scan was launched" if reason else "") + "; the full list follows.")
-        return out + legacy_list.render(vault, cwd)
-    out.append(text.rstrip("\n"))
+        out += [f"LEDGER: {vault}", "TENET BRIEF: none computed yet" + (" — a first scan was launched" if reason else "") + "; ask for a note by name."]
+    else:
+        out.append(text.rstrip("\n"))
     pending = len(ledger.md_files(vault / "inbox"))
     if pending:
         out.append(f"{pending} draft(s) awaiting review in inbox/. Tell the user to run /tenet:tenet-capture review: it is user-invoked, so the Skill tool cannot start it.")
-    if reason:
+    if reason and text is not None:
         out.append(f"(brief refresh launched in the background: {reason})")
     return out
 
@@ -119,7 +117,6 @@ def main(argv=None):
     hook.add_argument("event", choices=["session-start", "stop"])
     hook.add_argument("--compact", action="store_true")
     sub.add_parser("promote")
-    sub.add_parser("list")
     sub.add_parser("inbox")
     sub.add_parser("sweep")
     sub.add_parser("brief")
@@ -161,7 +158,6 @@ def main(argv=None):
         return 0
     render = {
         "promote": lambda: promote.run(vault),
-        "list": lambda: legacy_list.render(vault, os.getcwd()),
         "brief": lambda: briefing(vault, compact=True),
         "inbox": lambda: inbox.render(vault),
         "sweep": lambda: sweep.render(vault),

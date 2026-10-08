@@ -192,6 +192,7 @@ class Runner(VaultCase):
         self.assertIn("Tell the user to run /tenet:tenet-capture review", out)
 
     def test_hook_without_brief_says_so_and_launches_a_scan(self):
+        self.write("2026-09-01-u.md", note())
         data = self.tmp / "data"
         os.environ.update(TENET_LEDGER=str(self.vault), TENET_DATA=str(data))
         launched, original = [], run.spawn
@@ -203,6 +204,7 @@ class Runner(VaultCase):
         finally:
             run.spawn = original
         self.assertIn("TENET BRIEF: none computed yet — a first scan was launched", buf.getvalue())
+        self.assertNotIn("[[2026-09-01-u]]", buf.getvalue())  # a cold start lists nothing it did not score
         self.assertEqual(launched, [1])
 
     def test_category_without_a_hub_is_reported(self):

@@ -43,11 +43,10 @@ def render(vault):
     drafts = ledger.md_files(vault / "inbox")
     parsed = {n: ledger.read(n) for n in roots}
     gotchas = sum(1 for fm, _, _ in parsed.values() if fm.get("type") == "gotcha")
-    universal = sum(1 for fm, _, _ in parsed.values() if fm.get("type") != "gotcha" and fm.get("scope") == "universal")
     raw = [p for p in (vault / "raw").glob("*") if p.is_file() and p.name != ".gitkeep"]
 
     out = [f"Ledger: {vault}", f"Notes: {len(roots)}", f"Drafts pending: {len(drafts)}",
-           f"Universal notes (excl. gotchas): {universal}", f"Gotchas: {gotchas}", f"Raw files: {len(raw)}", ""]
+           f"Gotchas: {gotchas}", f"Raw files: {len(raw)}", ""]
 
     out.append("--- decisions with a revisit condition ---")
     out += [f"  {n.name}: {fm['revisit']}" for n, (fm, _, _) in parsed.items() if fm.get("revisit")]

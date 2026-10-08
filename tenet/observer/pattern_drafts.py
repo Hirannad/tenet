@@ -56,7 +56,7 @@ def _draft(vault, group, quote):
         blocks[0] = f"## {heads[0]}\n\n> {text}\n\n— {day}, {Path(root).name}\n"
         if len(heads) > 3:
             blocks[3] = f"## {heads[3]}\n\n" + "\n".join(f"- [[{m.stem}]]" for m in group["members"]) + "\n"
-    return (f"---\ntype: pattern\ncreated: {date.today().isoformat()}\nstatus: proposed\nscope: universal\n"
+    return (f"---\ntype: pattern\ncreated: {date.today().isoformat()}\nstatus: proposed\n"
             f"categories:\n  - \"{top}\"\nderived:{derived}\nrelated:\n---\n\n"
             + "\n".join(blocks) + f"\n<!-- pattern-key: {group['key']} -->\n")
 

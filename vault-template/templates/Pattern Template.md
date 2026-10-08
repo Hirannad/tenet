@@ -2,7 +2,6 @@
 type: pattern
 created: {{date:YYYY-MM-DD}}
 status: proposed
-scope: universal
 categories:
   - ""
 derived:
