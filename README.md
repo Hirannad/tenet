@@ -41,7 +41,7 @@ already holds markdown or an `.obsidian/`.
 
 | When | What | Cost |
 | :-- | :-- | :-- |
-| session start | promote reviewed drafts, print this project's brief | ~30 ms; the brief is capped at 4 KB and says what it withheld |
+| session start or `/clear` | promote reviewed drafts, print this project's brief | ~30 ms; the brief is capped at 4 KB and says what it withheld |
 | session start, when due | a detached background scan (brief older than a week, notes changed, or a new project) | ~2 s, never waited on |
 | after compaction | the brief again, no scan | the same |
 | after each response | is this a resting point with drafts waiting? If so, one verdict dialog | ~0.1 s with an empty inbox; reads the transcript only when drafts wait; asks at most once per session |
@@ -76,19 +76,24 @@ grep -rnE 'curl|wget|https?://|/dev/tcp|urllib|socket|http\.client' tenet/ hooks
 ```
 
 **What it writes:** `cli.py bootstrap` creates the ledger; a verdict rewrites the draft's `status`
-line, deletes a discarded draft, and appends date, draft name and verdict to
+line, takes a discarded draft out of the inbox (`git rm` when the ledger tracks it, otherwise a
+move into the plugin's data directory, so it stays recoverable), and appends date, draft name and verdict to
 `_meta/observer/verdicts.jsonl`; session start moves approved drafts from
 `inbox/` to the ledger root, with `git mv` when the ledger is a repository (which leaves a staged
 rename there); the observer appends to `_meta/observer/usage.jsonl` in the ledger (date, note name,
-project path, session id: which notes were used where, kept for 180 days) and writes its briefs and
-status to the data directory Claude Code assigns the plugin (`~/.claude/plugins/data/tenet-…/`).
+project path, session id: which notes were used where, kept for 180 days) and the date its measurement
+began to `_meta/observer/state.json`. When a group of related decisions matches a sentence from one
+of your prompts, it writes a `proposed` pattern draft to `inbox/` that quotes that sentence verbatim,
+with its date and project folder name, and lists the group in `_meta/observer/patterns.json` so it
+is proposed only once. It writes its briefs and status to the data directory Claude Code assigns the plugin (`~/.claude/plugins/data/tenet-…/`).
 Nothing else under `~/.claude` is written.
 
 **What the observer reads:** your session transcripts of the last 30 days
 (`~/.claude/projects/*/*.jsonl`). Your prompts, the questions and options of AskUserQuestion calls,
 and the file paths tools touched decide which notes matter in which project; the assistant's text
-is searched only for ledger note names it cited. None of that text is stored: a brief holds note
-names and the first sentence of each note, and the usage log holds what is listed above.
+is searched only for ledger note names it cited. None of that text is stored, with one exception: a
+pattern draft quotes the single prompt sentence it was built from. A brief holds note names and the
+first sentence of each note, and the usage log holds what is listed above.
 
 **What it reads from Claude's auto memory** (`~/.claude/projects/*/memory/`): the sweep selects
 notes of `type: feedback` and prints each one's project, filename and `description:` line, and
@@ -109,7 +114,8 @@ project's `CLAUDE.md` and `rules/`, `CLAUDE.local.md`, managed policy, the setti
 - A project gets its own brief from its first scanned session; before that the session start
   shows the global brief (core and fresh notes).
 - `audit layers` counts directives, not tokens, and undercounts a paragraph holding several rules.
-- A contradiction between two rules that share no wording is invisible to the audit.
+- A contradiction between two rules that share no wording is invisible to the audit; Claude Code's
+  `/doctor prompt-audit` reports those.
 - With the working directory inside this repository the plugin loads twice.
 
 ## License

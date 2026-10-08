@@ -106,13 +106,9 @@ def eligible(vault):
     heading, _ = ledger.section_heading(vault)
     out = []
     for draft in ledger.md_files(Path(vault) / "inbox"):
-        fm, _, body = ledger.read(draft)
-        if fm.get("status") != "proposed" or "{{" in draft.read_text(encoding="utf-8", errors="replace"):
-            continue
-        lead = ledger.sections(body).get(heading)
-        if ledger.words(body) > conv["cap_note_words"] or (fm.get("type") == "decision" and (lead is None or ledger.words(lead) > conv["cap_decision_words"])):
-            continue
-        out.append(draft)
+        fm, block, body = ledger.read(draft)
+        if fm.get("status") == "proposed" and not ledger.cap_problems(fm, block, body, conv, heading):
+            out.append(draft)
     return out
 
 

@@ -12,28 +12,10 @@ from tenet import ledger, patterns, paths
 WIKILINK = re.compile(r"\[\[([^\]]+)\]\]")
 
 
-def _memory_root():
-    """Return (root or None, status line). Each way of reading nothing says which way it was."""
-    if os.environ.get("CLAUDE_CODE_DISABLE_AUTO_MEMORY"):
-        return None, "auto memory is off (CLAUDE_CODE_DISABLE_AUTO_MEMORY is set). Nothing was read — not the same as no deviations."
-    cdir = paths.config_dir()
-    settings = cdir / "settings.json"
-    try:
-        data = json.loads(settings.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return cdir / "projects", f"no readable {settings}, so a relocated memory directory could not be ruled out"
-    if data.get("autoMemoryEnabled") is False:
-        return None, f"auto memory is off (autoMemoryEnabled false in {settings}). Nothing was read — not the same as no deviations."
-    custom = data.get("autoMemoryDirectory")
-    if custom:
-        return Path(custom).expanduser(), "relocated by autoMemoryDirectory"
-    return cdir / "projects", ""
-
-
 def _feedback():
-    root, note = _memory_root()
+    root, note = paths.memory_root()
     if root is None:
-        return [f"  status: {note}"]
+        return [f"  status: {note}. Nothing was read — not the same as no deviations."]
     suffix = f" ({note})" if note else ""
     if not root.is_dir():
         return [f"  status: nothing at {root}{suffix} — no record to read, which is not a clean record."]
@@ -77,15 +59,8 @@ def render(vault):
 
     out += ["", f"--- word counts over the caps ({conv['cap_note_words']} body / {conv['cap_decision_words']} {heading}) ---"]
     for n in [*roots, *drafts]:
-        fm, _, body = parsed.get(n) or ledger.read(n)
-        if ledger.words(body) > conv["cap_note_words"]:
-            out.append(f"  {n.name}: body {ledger.words(body)}")
-        if fm.get("type") == "decision":
-            text = ledger.sections(body).get(heading)
-            if text is None:
-                out.append(f"  {n.name}: no '## {heading}' section" + (" — see the notice below" if notice else ""))
-            elif ledger.words(text) > conv["cap_decision_words"]:
-                out.append(f"  {n.name}: {heading} {ledger.words(text)}")
+        fm, block, body = parsed.get(n) or ledger.read(n)
+        out += [f"  {n.name}: {detail}" for kind, detail in ledger.cap_problems(fm, block, body, conv, heading) if kind != "unexpanded"]
     if notice:
         out.append(f"  {notice}")
 

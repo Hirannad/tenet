@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess
 import sys
@@ -168,7 +169,7 @@ class Sweep(VaultCase):
         self.write("2026-09-01-u.md", note(decision_words=70))
         out = "\n".join(sweep.render(self.vault))
         self.assertIn("auto memory is off", out)
-        self.assertIn("2026-09-01-u.md: Döntés 70", out)
+        self.assertIn("2026-09-01-u.md: ## Döntés: 70 words (max 60)", out)
 
     def test_nested_feedback_type_is_found(self):
         cfg = self.tmp / "cfg"
@@ -203,6 +204,11 @@ class Cli(VaultCase):
         r = self.run_cli("hook", "session-start", TENET_LEDGER=str(self.vault))
         self.assertEqual(r.returncode, 0)
         self.assertIn("inbox/ missing", r.stdout)
+
+    def test_session_start_hook_covers_clear(self):
+        # /clear empties the context, so the brief has to come back with it.
+        hooks = json.loads((paths.PLUGIN_ROOT / "hooks" / "hooks.json").read_text())["hooks"]["SessionStart"]
+        self.assertIn("clear", "|".join(h["matcher"] for h in hooks).split("|"))
 
     def test_compact_lists_without_promoting(self):
         self.write("inbox/a.md", note(status="accepted"))

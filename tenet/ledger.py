@@ -7,6 +7,7 @@ from tenet import paths
 CONVENTIONS = paths.PLUGIN_ROOT / "skills" / "tenet-capture" / "references" / "conventions.md"
 _KEY = re.compile(r"^([A-Za-z_][\w-]*):[ \t]*(.*)$")
 _ITEM = re.compile(r"^\s*-[ \t]*(.*)$")
+_PLACEHOLDER = re.compile(r"\{\{[^}]*\}\}")
 
 
 def unquote(value):
@@ -79,6 +80,24 @@ def sections(body):
 
 def words(text):
     return len(text.split())
+
+
+def cap_problems(fm, block, body, conv, heading):
+    """[(kind, detail)] for every mechanical limit a note breaks: kind is toolong, nosection or
+    unexpanded. The whole-note cap binds decisions and gotchas only, as conventions.md says."""
+    out, kind = [], fm.get("type")
+    if kind == "decision":
+        lead = sections(body).get(heading)
+        if lead is None:
+            out.append(("nosection", f"no '## {heading}' section"))
+        elif words(lead) > conv["cap_decision_words"]:
+            out.append(("toolong", f"## {heading}: {words(lead)} words (max {conv['cap_decision_words']})"))
+    if kind in ("decision", "gotcha") and words(body) > conv["cap_note_words"]:
+        out.append(("toolong", f"whole note: {words(body)} words (max {conv['cap_note_words']})"))
+    placeholder = _PLACEHOLDER.search(block + body)
+    if placeholder:
+        out.append(("unexpanded", f"{placeholder.group(0)} left literal"))
+    return out
 
 
 def section_heading(vault):

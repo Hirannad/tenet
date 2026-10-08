@@ -38,7 +38,7 @@ This mode owns `status`; the user answers in their own words and you write a val
 3. Do not move files: `tenet/promote.py` moves reviewed notes at the next session start.
 4. On `unclear`, or a rejection on form rather than merit, append an entry to `_meta/retro.md`
    (what deviated, which rule, which error class, what would have caught it).
-5. On discard, delete the draft and say which one.
+5. On discard, remove the draft (`git rm` when the ledger tracks it, so git keeps it) and say which one.
 
 ## Hard rules
 

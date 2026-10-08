@@ -2,8 +2,8 @@
 
 It answers three of the four diagnostics anthropics/claude-code#85477 names as missing: an
 instruction budget, duplicate rules across layers, and cross-file conflicts narrowed to negation
-pairs. The fourth, semantic conflict detection, is not implemented and says so in its own section
-rather than being quietly omitted.
+pairs. The fourth, semantic conflict detection, is Claude Code's own `/doctor prompt-audit`; its
+section here says so rather than quietly omitting it.
 
 A directive is a content line that reads as an instruction: a list item, or a line carrying a
 normative token (must, never, always, should, prefer, avoid, only, use, do not, ...).
@@ -246,18 +246,27 @@ def run(argv):
         if not os.path.isdir(repo):
             rows.append(("absent", f"project {short}", "-", "-", "-", "no such directory"))
             continue
-        measure(f"project {short}/CLAUDE.md", [repo + "/CLAUDE.md", repo + "/.claude/CLAUDE.md"])
+        claude_md = [repo + "/CLAUDE.md", repo + "/.claude/CLAUDE.md"]
+        # Claude Code (2.1.277+) reads AGENTS.md instead in a project that has no CLAUDE.md.
+        if not any(os.path.exists(f) for f in claude_md) and os.path.exists(repo + "/AGENTS.md"):
+            measure(f"project {short}/AGENTS.md", [repo + "/AGENTS.md"])
+        else:
+            measure(f"project {short}/CLAUDE.md", claude_md)
         measure(f"project {short}/rules", _files_under(repo + "/.claude/rules", _is_md))
         measure(f"project {short}/local", [repo + "/CLAUDE.local.md"])
 
     # Auto memory joins the duplication scan only: the harness meters MEMORY.md separately, so
     # counting it in the budget would make the one number this exists to produce wrong.
-    mem_state, mem_files = "skipped", 0
+    mem_state, mem_files, mem_note = "skipped", 0, ""
     if memory:
-        if not os.path.isdir(cdir + "/projects"):
+        root, mem_note = paths.memory_root()
+        if root is None:
+            mem_state = "off"
+        elif not root.is_dir():
             mem_state = "absent"
         else:
-            mem = _files_under(cdir + "/projects", lambda f: fnmatch.fnmatchcase(f, "*/memory/*.md"))
+            relocated = root != paths.config_dir() / "projects"
+            mem = _files_under(str(root), _is_md if relocated else lambda f: fnmatch.fnmatchcase(f, "*/memory/*.md"))
             mem_state = "measured" if mem else "empty"
             for f in mem:
                 try:
@@ -379,8 +388,8 @@ def run(argv):
       "  none — mechanisable only by a model, not by this script. Two rules can contradict\n"
       "  each other with no shared wording (\"commit early and often\" against \"one reviewed\n"
       "  change per PR\"), and a string comparison cannot see it. The negation pairs above are\n"
-      "  the mechanical subset; the rest is the audit skill's judgement call, and stating that\n"
-      "  is the difference between a gap and a check that quietly passes.\n")
+      "  the mechanical subset; for the rest, Claude Code's own `/doctor prompt-audit` reports\n"
+      "  instruction files that contradict each other.\n")
 
     p("\n== trend ==\n")
     if not os.access(baseline, os.R_OK):
@@ -415,8 +424,9 @@ def run(argv):
     p("\nlayer-check: %d directive(s), %d layer(s) measured, %s, %s"
       % (total, len(measured), count(len(clusters), "duplication cluster(s)"), count(len(candidates), "override candidate(s)")))
     p({"measured": ", auto memory scanned (%d file(s), duplication only)" % mem_files,
-       "absent": ", auto memory absent (not zero — no projects directory)",
+       "absent": ", auto memory absent (not zero — no memory directory)",
        "empty": ", auto memory read and held no directives",
+       "off": ", auto memory not read: %s" % mem_note,
        "skipped": ", auto memory skipped by --no-memory"}[mem_state])
     p("\n")
     return "".join(out), ""

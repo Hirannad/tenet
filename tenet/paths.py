@@ -1,4 +1,5 @@
 """Where things are. The only place that resolves the ledger path."""
+import json
 import os
 from pathlib import Path
 
@@ -32,6 +33,24 @@ def write_atomic(path, text):
 
 def config_dir():
     return Path(os.environ.get("CLAUDE_CONFIG_DIR") or "~/.claude").expanduser()
+
+
+def memory_root():
+    """Return (root or None, note): where auto memory lives, or None with the reason it is off.
+    The default root holds one <project>/memory/ per repository; a relocated one is the memory
+    directory itself."""
+    if os.environ.get("CLAUDE_CODE_DISABLE_AUTO_MEMORY"):
+        return None, "auto memory is off (CLAUDE_CODE_DISABLE_AUTO_MEMORY is set)"
+    settings = config_dir() / "settings.json"
+    try:
+        data = json.loads(settings.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return config_dir() / "projects", f"no readable {settings}, so a relocated memory directory could not be ruled out"
+    if data.get("autoMemoryEnabled") is False:
+        return None, f"auto memory is off (autoMemoryEnabled false in {settings})"
+    if data.get("autoMemoryDirectory"):
+        return Path(data["autoMemoryDirectory"]).expanduser(), "relocated by autoMemoryDirectory"
+    return config_dir() / "projects", ""
 
 
 def check_ledger(path, source, quiet_when_absent=False):

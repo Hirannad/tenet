@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from tenet import verdict  # noqa: E402
+from tenet import promote, verdict  # noqa: E402
 from tests.helpers import VaultCase, note  # noqa: E402
 
 
@@ -156,6 +156,15 @@ class Apply(VaultCase):
         questions = json.loads(text.split("\n")[2])
         ticket = text.split("--ticket ")[1].split()[0]
         return ticket, [q["question"] for q in questions]
+
+    def test_caps_are_the_ones_promote_applies(self):
+        # The whole-note cap binds decisions and gotchas; a long pattern draft must still reach a verdict.
+        self.write("inbox/2026-09-01-pattern.md", note(kind="pattern", status="proposed", decision_words=450))
+        self.write("inbox/2026-09-02-decision.md", note(status="proposed") + "\n## Más\n\n" + "szó " * 450 + "\n")
+        self.assertEqual([d.name for d in verdict.eligible(self.vault)], ["2026-09-01-pattern.md"])
+        out = "\n".join(promote.run(self.vault))
+        self.assertIn("2026-09-02-decision.md — whole note:", out)
+        self.assertNotIn("2026-09-01-pattern.md", out)
 
     def test_batch_size_follows_the_backlog(self):
         self.assertEqual([verdict.batch_size(b) for b in (0, 1, 2, 5, 6, 11, 12, 33)], [0, 1, 2, 2, 3, 3, 4, 4])

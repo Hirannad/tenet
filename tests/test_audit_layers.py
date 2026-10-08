@@ -54,6 +54,24 @@ class LayerCheck(unittest.TestCase):
         self.assertRegex(out, re.compile(r"^  measured +project repo/CLAUDE\.md +1 +1 +1$", re.M))
         self.assertNotRegex(out, re.compile(r"^  measured +user CLAUDE\.md", re.M))
 
+    def test_agents_md_is_the_project_layer_only_without_claude_md(self):
+        self.write(self.repo / "AGENTS.md", RULE)
+        self.assertRegex(self.check("--no-memory"), re.compile(r"^  measured +project repo/AGENTS\.md +1 +1 +1$", re.M))
+        self.write(self.repo / ".claude" / "CLAUDE.md", RULE)
+        out = self.check("--no-memory")
+        self.assertRegex(out, re.compile(r"^  measured +project repo/CLAUDE\.md +1 +1 +1$", re.M))
+        self.assertNotIn("AGENTS.md", out)
+
+    def test_memory_follows_the_settings_that_move_or_disable_it(self):
+        mem = self.write(self.root / "elsewhere" / "MEMORY.md", RULE)
+        self.write(self.cfg / "CLAUDE.md", RULE)
+        self.write(self.cfg / "settings.json", '{"autoMemoryDirectory": "%s"}' % mem.parent)
+        self.assertIn("  2 layers: auto memory, user CLAUDE.md\n", self.check())
+        self.write(self.cfg / "settings.json", '{"autoMemoryEnabled": false}')
+        out = self.check()
+        self.assertIn("auto memory not read: auto memory is off (autoMemoryEnabled false", out)
+        self.assertNotIn("auto memory,", out)
+
     def test_symlinked_rule_files_and_directories_are_followed(self):
         shared = self.write(self.root / "shared" / "style.md", RULE)
         self.write(self.root / "shared" / "sub" / "api.md", "- Never call the API without a timeout set\n")
@@ -133,7 +151,7 @@ class LayerCheck(unittest.TestCase):
         self.assertIn("auto memory skipped by --no-memory", skipped)
 
     def test_missing_projects_dir_is_absent_not_empty(self):
-        self.assertIn("auto memory absent (not zero — no projects directory)", self.check())
+        self.assertIn("auto memory absent (not zero — no memory directory)", self.check())
 
     def test_unopenable_file_is_unreadable_not_a_zero(self):
         (self.repo / "CLAUDE.md").mkdir()

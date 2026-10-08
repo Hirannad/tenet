@@ -13,13 +13,14 @@ override" works only because the later text is read later and says so.
    ~/.claude/rules/*.md          user rules; load before project rules
 3. <repo>/CLAUDE.md              project, team; committed
    or <repo>/.claude/CLAUDE.md   the same layer
+   or <repo>/AGENTS.md           the same layer, read only when neither CLAUDE.md exists
    <repo>/.claude/rules/**.md    project rules; without `paths:` they load at launch
 4. <repo>/CLAUDE.local.md        machine-local, gitignored; appended after CLAUDE.md
 ```
 
 On demand rather than at launch: `CLAUDE.md` files in subdirectories below the working directory,
-and rules with `paths:` frontmatter. Both arrive when Claude reads a matching file. `AGENTS.md` is
-not a layer: Claude Code reads it only through an `@AGENTS.md` import (or a symlink).
+and rules with `paths:` frontmatter. Both arrive when Claude reads, writes or edits a matching file.
+Next to a `CLAUDE.md`, an `AGENTS.md` loads only through an `@AGENTS.md` import (or a symlink).
 
 `/context` lists what actually loaded; `claudeMdExcludes` (any settings layer, arrays merge) is why
 a present file can still never load.

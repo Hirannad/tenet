@@ -33,22 +33,13 @@ def run(vault):
 
     for draft in ledger.md_files(inbox):
         try:
-            fm, _, body = ledger.read(draft)
+            fm, block, body = ledger.read(draft)
         except OSError as exc:
             found["invalid"].append(f"  - {draft.name} — unreadable: {exc}")
             continue
-        status, kind = fm.get("status") or "", fm.get("type")
-        if kind == "decision":
-            text = ledger.sections(body).get(heading)
-            if text is None:
-                found["nosection"].append(f"  - {draft.name} — no '## {heading}' section")
-            elif ledger.words(text) > conv["cap_decision_words"]:
-                found["toolong"].append(f"  - {draft.name} — ## {heading}: {ledger.words(text)} words (max {conv['cap_decision_words']})")
-        if kind in ("decision", "gotcha") and ledger.words(body) > conv["cap_note_words"]:
-            found["toolong"].append(f"  - {draft.name} — whole note: {ledger.words(body)} words (max {conv['cap_note_words']})")
-        placeholder = re.search(r"\{\{[^}]*\}\}", draft.read_text(encoding="utf-8", errors="replace"))
-        if placeholder:
-            found["unexpanded"].append(f"  - {draft.name} — {placeholder.group(0)} left literal")
+        status = fm.get("status") or ""
+        for kind, detail in ledger.cap_problems(fm, block, body, conv, heading):
+            found[kind].append(f"  - {draft.name} — {detail}")
         if status not in conv["statuses"]:
             found["invalid"].append(f"  - {draft.name} — status: {status or '(missing)'}")
             continue
