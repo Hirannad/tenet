@@ -1,11 +1,16 @@
+import contextlib
+import io
 import json
+import os
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from tenet import promote, verdict  # noqa: E402
+from tenet import cli, paths, promote, verdict  # noqa: E402
+from tenet.observer import run  # noqa: E402
 from tests.helpers import VaultCase, note  # noqa: E402
 
 
@@ -102,6 +107,30 @@ class Gate(GateBase):
     def test_no_backlog_no_question(self):
         (self.vault / "inbox" / "2026-09-01-draft.md").unlink()
         self.assertIsNone(verdict.gate(self.transcript(), self.vault, self.data))
+
+
+class StopHook(GateBase):
+    """The hook entry point: what Claude Code actually runs, stdin in and JSON out."""
+
+    def run_hook(self, payload):
+        for var in ("CLAUDE_PLUGIN_OPTION_LEDGER", "CLAUDE_PLUGIN_DATA"):
+            os.environ.pop(var, None)
+        os.environ.update(TENET_LEDGER=str(self.vault), TENET_DATA=str(self.data))
+        out = io.StringIO()
+        with mock.patch("sys.stdin", io.StringIO(json.dumps(payload))), contextlib.redirect_stdout(out):
+            self.assertEqual(cli.stop_hook(), 0)
+        return out.getvalue()
+
+    def test_fires_as_stop_additional_context(self):
+        got = json.loads(self.run_hook(self.transcript()))["hookSpecificOutput"]
+        self.assertEqual(got["hookEventName"], "Stop")
+        self.assertIn("TENET VERDICT", got["additionalContext"])
+
+    def test_a_failure_is_silent_now_and_shown_at_the_next_session_start(self):
+        with mock.patch.object(verdict, "gate", side_effect=RuntimeError("boom")):
+            self.assertEqual(self.run_hook(self.transcript()), "")
+        self.assertIn("RuntimeError: boom", paths.verdict_errors(self.data).read_text())
+        self.assertTrue(any(b.startswith("TENET VERDICT GATE: 1 error(s)") for b in run.banners(self.data)))
 
 
 class ReviewFindings(GateBase):

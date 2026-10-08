@@ -178,6 +178,20 @@ class Cli(VaultCase):
         self.assertEqual(r.returncode, 0)
         self.assertIn("inbox/ missing", r.stdout)
 
+    def test_every_subcommand_the_docs_name_exists(self):
+        import contextlib, io, re
+        from tenet import cli
+        root = paths.PLUGIN_ROOT
+        named = set()
+        for f in [*root.glob("skills/**/*.md"), root / "README.md", root / "CLAUDE.md"]:
+            named |= set(re.findall(r'cli\.py"? +([a-z][a-z-]*)', f.read_text()))
+        self.assertTrue(named)
+        for sub in sorted(named):
+            with self.subTest(sub=sub), contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit) as exit_:
+                    cli.main([sub, "-h"])
+                self.assertEqual(exit_.exception.code, 0)
+
     def test_session_start_hook_covers_clear(self):
         # /clear empties the context, so the brief has to come back with it.
         hooks = json.loads((paths.PLUGIN_ROOT / "hooks" / "hooks.json").read_text())["hooks"]["SessionStart"]
