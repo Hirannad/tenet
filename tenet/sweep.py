@@ -1,6 +1,4 @@
 """The inventory the weekly sweep works from, so the model composes no shell of its own."""
-import json
-import os
 import re
 import subprocess
 import time

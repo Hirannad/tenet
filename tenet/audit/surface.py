@@ -5,7 +5,7 @@ that. So the only number worth printing is a delta against a baseline the user a
 
 It never writes: re-baselining stays a human act, because a baseline that updates itself erases
 the signal it exists to produce. `--record` prints a baseline to stdout and leaves the redirect
-to the user. It never gates either (always exit 0): a broken checker must not block a session.
+to the user. It never gates either: the exit is 0 unless the arguments are unusable.
 
 Options: --baseline FILE (default: <config dir>/surface-baseline.json), --record.
 """
@@ -208,9 +208,9 @@ def record(cdir, settings, baseline):
     surfaces = _surfaces(base)
     # stderr, because stdout is the baseline itself and usually redirected into a file.
     if base is MISSING:
-        print(f"surface-check: no baseline at {baseline}, so there was no note to carry forward.", file=sys.stderr)
+        print(f"audit surface: no baseline at {baseline}, so there was no note to carry forward.", file=sys.stderr)
     elif surfaces is None:
-        print(f"surface-check: {baseline} is not a surface baseline this can read, so no note was "
+        print(f"audit surface: {baseline} is not a surface baseline this can read, so no note was "
               "carried forward from it. Merge its notes by hand.", file=sys.stderr)
     # Everything written by hand survives a re-record: per-surface fields such as source or note,
     # and top-level fields such as _comment. Only what this module measures is replaced.
@@ -222,7 +222,7 @@ def record(cdir, settings, baseline):
     for k in SURFACES:
         count, note, keys = measure(k, cdir, settings)
         if count is None:
-            print(f"surface-check: {k} could not be read; recording null, which will read as unbaselined next time.",
+            print(f"audit surface: {k} could not be read; recording null, which will read as unbaselined next time.",
                   file=sys.stderr)
         old = (surfaces or {}).get(k)
         entry = {f: v for f, v in (old.items() if isinstance(old, dict) else []) if f not in ("count", "keys", "note")}
@@ -262,7 +262,7 @@ def main(argv=None):
     cdir = paths.config_dir()
     baseline, recording = _parse(argv, cdir)
     if baseline is None:
-        print("surface-check: --baseline needs a FILE", file=sys.stderr)
+        print("audit surface: --baseline needs a FILE", file=sys.stderr)
         return 1
     settings = _load(cdir / "settings.json")
     if recording:

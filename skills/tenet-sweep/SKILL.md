@@ -9,8 +9,8 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash(python3 ${CLAUDE_PLUGIN_ROOT}
 **The ledger's path is printed by the block below** — use that, never an assumed default.
 
 Nothing in this plugin schedules this run. What ships instead is the nag: `tenet/promote.py`
-reports at every session start when the last digest is over a week old, so a forgotten sweep says so
-rather than going quiet. Wire it to a real scheduler yourself if you want one. **It proposes;
+reports at every session start when the last digest is over a week old. That line is all it does,
+and nothing notices when it is ignored; wire the sweep to a real scheduler if it must run. **It proposes;
 it does not decide.** The only thing it may write on its own is the digest note. Everything
 else is a suggestion for the user.
 

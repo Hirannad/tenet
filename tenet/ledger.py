@@ -34,7 +34,7 @@ def frontmatter(block):
     for line in block.splitlines():
         m = _KEY.match(line)
         if m:
-            # A repeated key keeps its first value, as the bash tools did.
+            # A repeated key keeps its first value.
             key = None if m.group(1) in data else m.group(1)
             if key:
                 data[key] = unquote(m.group(2))

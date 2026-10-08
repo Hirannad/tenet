@@ -123,7 +123,7 @@ class Record(SurfaceCase):
         self.baseline(permissions_allow={"count": 1, "note": "Accepted: read-only."},
                       global_agents={"count": 0, "note": "no agents/ directory"},
                       global_skills={"count": 0, "note": "Kept empty on purpose."})
-        out, err = self.run_main("--record")
+        out, _ = self.run_main("--record")
         got = json.loads(out)["surfaces"]
         self.assertEqual(got["permissions_allow"], {"count": 2, "keys": ["Bash(ls *)", 'say "hi"'],
                                                     "note": "Accepted: read-only."})

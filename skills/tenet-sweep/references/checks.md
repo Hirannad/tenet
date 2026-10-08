@@ -28,7 +28,7 @@ inventory rather than estimating.
 
 ## 2. Stale drafts
 
-Files in `inbox/` older than 14 days. List them with age and first heading. Two honest options:
+Files in `inbox/` older than 14 days; the inventory lists them by name. Two honest options:
 review them, or discard them. A draft that has sat for a month is usually telling you it did not
 matter.
 

@@ -85,7 +85,7 @@ class FrontmatterCase(unittest.TestCase):
         repo = self.tmp / "build" / "inner"
         self.write("none.md", "# x\n", root=repo)
         self.write("dist/generated.md", "# x\n", root=repo)
-        code, out = self.run_main(repo)
+        _, out = self.run_main(repo)
         self.assertIn("  1 checked, 0 exempted, 1 bad", out)
 
     def test_trailing_slash_keeps_exemptions_relative(self):

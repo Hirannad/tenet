@@ -90,7 +90,7 @@ class Brief(VaultCase):
 
     def test_project_ranks_its_own_notes_first(self):
         sessions = [session("/p/hooks", ["a stop hook zajos"]), session("/p/anim", ["gsap canvas animáció"], sid="s2")]
-        notes, projs, scores = self.build(sessions)
+        notes, _, scores = self.build(sessions)
         top = lambda r: max(scores[r], key=scores[r].get)
         self.assertTrue(top("/p/hooks").endswith("stop-hook"))
         self.assertTrue(top("/p/anim").endswith("gsap-canvas"))

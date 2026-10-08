@@ -13,7 +13,6 @@ from tenet import ledger, paths, promote
 
 MIN_WORK = 20
 INTERACTIVE = ("claude-desktop", "cli")
-LABELS = ("Accept", "Discard", "To memory", "Later")
 TERMINAL = re.compile(r"<status>(completed|failed|stopped|killed)</status>")
 
 
@@ -43,7 +42,7 @@ def _blocks(row):
 
 def busy(payload):
     """Why this stop is not a resting point, or None when it is."""
-    if payload.get("stop_hook_active") or os.environ.get("TENET_OBSERVER_RUN"):
+    if payload.get("stop_hook_active"):
         return "re-entry"
     transcript = payload.get("transcript_path")
     if not transcript or not os.path.isfile(transcript):

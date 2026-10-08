@@ -13,7 +13,7 @@ paragraph holding three rules counts once. Both undercount, the safe direction f
 
 It never writes and never gates. `--record` prints a baseline for the user to move into place,
 because a baseline that updates itself erases the signal it exists to produce; the exit is always
-0, because a checker that can fail a session is a checker people switch off.
+0, because it reports and does not gate.
 
 Options: --baseline FILE, --record, --no-memory, then repo paths (none = the current directory).
 """
@@ -293,7 +293,7 @@ def run(argv):
                f'  "total_directives": {total},\n  "layers": {{\n'
                + (layers + "\n" if layers else "    ") + "  }\n}\n")
         err = "" if measured else (
-            "layer-check: no layer could be measured, so this baseline records nothing and will read as\n"
+            "audit layers: no layer could be measured, so this baseline records nothing and will read as\n"
             "unbaselined next time. Recording it now would freeze a measurement that never happened.\n")
         return out, err
 
@@ -421,7 +421,7 @@ def run(argv):
 
     # An unmeasured comparison is not zero clusters.
     count = lambda n, what: ("%d %s" % (n, what)) if directives else ("%s unmeasured" % what.split("(")[0].rstrip())
-    p("\nlayer-check: %d directive(s), %d layer(s) measured, %s, %s"
+    p("\naudit layers: %d directive(s), %d layer(s) measured, %s, %s"
       % (total, len(measured), count(len(clusters), "duplication cluster(s)"), count(len(candidates), "override candidate(s)")))
     p({"measured": ", auto memory scanned (%d file(s), duplication only)" % mem_files,
        "absent": ", auto memory absent (not zero — no memory directory)",
@@ -445,8 +445,8 @@ def _emit(text, stream):
 def main(argv):
     try:
         out, err = run(argv)
-    except Exception as exc:  # noqa: BLE001 — a broken checker must not be able to block a session
-        out, err = f"layer-check: {type(exc).__name__}: {exc}; measured nothing.\n", ""
+    except Exception as exc:  # noqa: BLE001 — a crash still says that nothing was measured
+        out, err = f"audit layers: {type(exc).__name__}: {exc}; measured nothing.\n", ""
     _emit(out, sys.stdout)
     if err:
         _emit(err, sys.stderr)

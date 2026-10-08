@@ -1,6 +1,5 @@
 """Running the observer: the scan itself, launching it in the background, and its status."""
 import fcntl
-import os
 import subprocess
 import sys
 import time

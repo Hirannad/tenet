@@ -35,7 +35,7 @@ jobs:
       - name: Frontmatter, every tracked markdown file
         run: python3 tenet/cli.py audit frontmatter .
 
-      - name: layer-check reports absent layers as absent, never as zero
+      - name: audit layers reports absent layers as absent, never as zero
         run: |
           set -euo pipefail
           out=$(python3 tenet/cli.py audit layers .)

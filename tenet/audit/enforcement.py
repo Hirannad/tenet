@@ -1,7 +1,7 @@
 """Does every rule in the global CLAUDE.md carry a row in the user's enforcement table?
 
 Prints three numbers: unmarked rules (the defect), orphan rows (the table went stale), empty
-cells. Reports only and always exits 0: a broken checker must not be able to block a session.
+cells. Reports only and always exits 0: a missing table is a finding, not a failure.
 
 Options: --rules FILE (default: <config dir>/CLAUDE.md, or $CLAUDE_MD),
          --table FILE (default: <config dir>/enforcement.md, or $ENFORCEMENT_TABLE).
@@ -93,14 +93,13 @@ def main(argv=None):
 
     source = _read(claude_md)
     if source is None:
-        print(f"enforcement-check: cannot read {claude_md}")
+        print(f"audit enforcement: cannot read {claude_md}")
         return 0
     wanted = rules(source)
     text = _read(table)
     if text is None:
-        # A hook may anchor on the "CLAUDE.md enforcement: no table yet at" line start.
         if explicit:
-            print(f"enforcement-check: the table was pointed at {table} and it cannot be read — moved or "
+            print(f"audit enforcement: the table was pointed at {table} and it cannot be read — moved or "
                   f"mistyped? {len(wanted)} rule(s) are uncovered until it is back.")
         else:
             print(f"CLAUDE.md enforcement: no table yet at {table} — {len(wanted)} rule(s) with nothing recorded "

@@ -82,7 +82,7 @@ class EnforcementCase(unittest.TestCase):
 
     def test_unreadable_rules_say_so(self):
         self.assertEqual(self.run_main("--rules", str(self.tmp / "none.md")),
-                         f"enforcement-check: cannot read {self.tmp}/none.md\n")
+                         f"audit enforcement: cannot read {self.tmp}/none.md\n")
 
     def test_table_only_mode_is_gone(self):
         (self.tmp / "t.md").write_text("no table here\n")

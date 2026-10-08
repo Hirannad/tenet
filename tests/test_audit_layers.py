@@ -185,7 +185,7 @@ class LayerCheck(unittest.TestCase):
     def test_a_crash_still_exits_zero_and_says_so(self):
         with mock.patch.object(layers, "run", side_effect=RuntimeError("boom")):
             out = self.check()
-        self.assertIn("layer-check: RuntimeError: boom; measured nothing.", out)
+        self.assertIn("audit layers: RuntimeError: boom; measured nothing.", out)
 
 
 if __name__ == "__main__":
