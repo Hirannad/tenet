@@ -73,7 +73,11 @@ like project decisions wearing a universal label.
 
 ## 7. Pattern candidates
 
-Three or more decisions sharing a rationale suggest an undistilled principle.
+Three or more decisions sharing a rationale suggest an undistilled principle. The inventory's
+`pattern candidates` section lists the groups it found (a `related` link plus text overlap, 3-8
+members) with their shared terms; judge each one and word the question. A group is a lead, not a
+finding: drop one that is only a shared topic. The observer separately drafts a pattern when the
+user's own quote exists; that draft arrives in `inbox/`, so do not write one here.
 
 **Propose it as a question. Never write the pattern.**
 

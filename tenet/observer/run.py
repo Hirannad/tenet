@@ -8,7 +8,7 @@ from datetime import date
 from pathlib import Path
 
 from tenet import paths
-from tenet.observer import brief, transcripts, usage
+from tenet.observer import brief, pattern_drafts, transcripts, usage
 
 STALE_DAYS = 7
 RETRY_SECONDS = 24 * 3600
@@ -49,10 +49,12 @@ def scan(vault, data):
             sessions, oldest = transcripts.sessions(30)
             new_uses = usage.update(vault, sessions, oldest)
             count = brief.write_all(vault, data, sessions, date.today().isoformat())
+            groups, drafts = pattern_drafts.write(vault, sessions)
         except Exception as exc:  # noqa: BLE001
             _write_status(data, error=f"{type(exc).__name__}: {exc}"[:300])
             raise
-        _write_status(data, last_ok=int(time.time()), error="", sessions=len(sessions), projects=count, new_uses=new_uses)
+        _write_status(data, last_ok=int(time.time()), error="", sessions=len(sessions), projects=count, new_uses=new_uses,
+                      pattern_groups=groups, pattern_drafts=drafts)
         return len(sessions), count, new_uses
 
 

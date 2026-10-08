@@ -7,7 +7,7 @@ import time
 from collections import Counter
 from pathlib import Path
 
-from tenet import ledger, paths
+from tenet import ledger, patterns, paths
 
 WIKILINK = re.compile(r"\[\[([^\]]+)\]\]")
 
@@ -102,6 +102,8 @@ def render(vault):
         targets |= set(WIKILINK.findall(f.read_text(encoding="utf-8", errors="replace")))
     existing = {p.stem for d in (vault, vault / "_meta", vault / "inbox") for p in ledger.md_files(d)}
     out += [f"  {t}" for t in sorted(targets) if t.split("|")[0].split("#")[0] not in existing]
+
+    out += ["", "--- pattern candidates (decisions that may share an insight) ---", *patterns.render(vault)]
 
     out += ["", "--- process deviations (native auto memory, type: feedback) ---", *_feedback()]
 

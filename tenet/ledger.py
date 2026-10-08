@@ -97,6 +97,17 @@ def section_heading(vault):
     )
 
 
+def template_headings(vault, kind):
+    """The `## ` headings of the vault's own template for a note type, in order. Empty when the
+    template is missing or has none."""
+    template = Path(vault) / "templates" / f"{kind} Template.md"
+    try:
+        lines = template.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return []
+    return [line[3:].strip() for line in lines if line.startswith("## ")]
+
+
 def conventions():
     """The machine-read values of the note model, from the one file that states them."""
     data = frontmatter(split(CONVENTIONS.read_text(encoding="utf-8"))[0])

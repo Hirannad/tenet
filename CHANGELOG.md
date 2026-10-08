@@ -3,6 +3,7 @@
 One line per version, keyed by version rather than commit. The narrative entries up to 2.2.7 are
 in `git show tenet--v2.2.7:CHANGELOG.md`; the commit behind each version carries its reasoning.
 
+- **Unreleased**: the sweep lists groups of accepted decisions that may share an insight (a `related` link plus text overlap, 3-8 members), and the observer writes a `proposed` pattern draft for a group only when a verbatim human-prompt quote on the idea exists; the draft opens with that quote and leaves the boundaries empty. No quote, no draft; a group proposed once is not proposed again.
 - **3.3.0** (2026-09-29): the verdict comes to the user. A Stop hook checks, cheapest condition
   first, whether drafts wait and the session is at rest (enough work, no background task, no open
   task or todo, the last message not a question); if so it asks for one to four verdicts in a single
