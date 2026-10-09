@@ -116,6 +116,22 @@ class Compare(SurfaceCase):
         self.assertIn("  unchanged   enabled_plugin_skills   2 (q@m enabled, nothing installed)", out)
 
 
+    def test_plugin_skills_are_the_declared_ones_not_every_skill_md_in_the_tree(self):
+        # a git-subdir install carries the whole upstream folder; the marketplace entry picks from it
+        root = self.tmp / "cache" / "wide"
+        for skill in ("picked", "other", "third"):
+            (root / skill).mkdir(parents=True)
+            (root / skill / "SKILL.md").write_text("x")
+        mp = self.tmp / "mp"
+        (mp / ".claude-plugin").mkdir(parents=True)
+        (mp / ".claude-plugin/marketplace.json").write_text(json.dumps(
+            {"plugins": [{"name": "wide", "strict": False, "skills": ["./picked"]}]}))
+        self.put("plugins/known_marketplaces.json", {"m": {"installLocation": str(mp)}})
+        self.put("settings.json", {"enabledPlugins": {"wide@m": True}})
+        self.put("plugins/installed_plugins.json", {"plugins": {"wide@m": [{"installPath": str(root)}]}})
+        out, _ = self.run_main("--record")
+        self.assertEqual(json.loads(out)["surfaces"]["enabled_plugin_skills"]["count"], 1)
+
     def test_a_switched_off_plugin_is_not_on_the_surface(self):
         # A quarantined plugin stays in enabledPlugins as false; counting it hides the quarantine.
         self.put("settings.json", {"enabledPlugins": {"on@m": True, "off@m": False}})

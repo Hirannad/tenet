@@ -3,6 +3,9 @@
 One line per version, keyed by version rather than commit. The narrative entries up to 2.2.7 are
 in `git show tenet--v2.2.7:CHANGELOG.md`; the commit behind each version carries its reasoning.
 
+- **3.4.3** (2026-10-10): `enabled_plugin_skills` counts the skills a plugin declares (its
+  marketplace entry's `skills`, else its manifest's, else `skills/`), not every `SKILL.md` in a
+  git-subdir install.
 - **3.4.2** (2026-10-10): `audit surface` counts what is switched on: a `false` entry in
   `enabledPlugins` is off the surface, a `skills/` folder without `SKILL.md` is not a skill, and
   `skills_dir_plugins` lists skills folders with a manifest instead of `plugins/data`.

@@ -123,6 +123,33 @@ def _listing(cdir, sub, keep, name=lambda n: n):
     return len(names), "", [name(n) for n in names]
 
 
+def _entries(cdir):
+    """plugin id -> its entry in its marketplace's own manifest, for every known marketplace."""
+    known, out = _load(cdir / "plugins" / "known_marketplaces.json"), {}
+    for mp, info in known.items() if isinstance(known, dict) else []:
+        where = info.get("installLocation") if isinstance(info, dict) else None
+        man = _load(Path(where) / ".claude-plugin" / "marketplace.json") if isinstance(where, str) else None
+        for entry in man.get("plugins", []) if isinstance(man, dict) else []:
+            if isinstance(entry, dict) and isinstance(entry.get("name"), str):
+                out[f"{entry['name']}@{mp}"] = entry
+    return out
+
+
+def _declared(root, entry):
+    """SKILL.md files the harness loads: the `skills` paths of the marketplace entry, else of the
+    manifest, else skills/. A git-subdir install carries the whole upstream folder, not just these."""
+    man = _load(root / ".claude-plugin" / "plugin.json")
+    paths = (entry or {}).get("skills") or (man.get("skills") if isinstance(man, dict) else None) or ["./skills/"]
+    found = set()
+    for rel in [paths] if isinstance(paths, str) else paths:
+        d = root / rel
+        if (d / "SKILL.md").is_file():
+            found.add(d / "SKILL.md")
+        elif d.is_dir():
+            found.update(c / "SKILL.md" for c in d.iterdir() if (c / "SKILL.md").is_file())
+    return len(found)
+
+
 def _plugin_skills(cdir, settings):
     # Which cached copy is live cannot be guessed: the cache keeps every version ever installed,
     # some named by commit SHA. installed_plugins.json carries the installPath; ask it.
@@ -135,7 +162,7 @@ def _plugin_skills(cdir, settings):
         enabled = _get(settings, "enabledPlugins")
     except Unread:
         return None, NEEDS, []
-    n, notes = 0, []
+    n, notes, listed = 0, [], _entries(cdir)
     for key, on in (enabled.items() if isinstance(enabled, dict) else []):
         if on is None or on is False:
             continue
@@ -148,7 +175,7 @@ def _plugin_skills(cdir, settings):
         if not isinstance(where, str) or not os.path.isdir(where):
             notes.append(f"{key} enabled, nothing installed")
             continue
-        n += sum((dirs + files).count("SKILL.md") for _, dirs, files in os.walk(where))
+        n += _declared(Path(where), listed.get(key))
     return n, "; ".join(notes), []
 
 
