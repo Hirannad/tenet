@@ -1,5 +1,6 @@
 import os
 import shutil
+import subprocess
 import tempfile
 import textwrap
 import unittest
@@ -14,6 +15,14 @@ def note(kind="decision", status="accepted", decision_words=10, heading="Dönté
     body = f"## {heading}\n\n" + " ".join(["szó"] * decision_words) + "\n" if heading else "## Más\n\nszöveg\n"
     return (f"---\ntype: {kind}\ncreated: 2026-09-01\nstatus: {status}\n"
             f"categories:{cats}\nrevisit: {revisit}\n{extra}---\n\n{body}")
+
+
+def as_agent(script, home):
+    """Run a command a hook printed the way the agent's Bash tool does: none of the plugin's
+    environment, and a sandbox HOME so a default path never reaches the live ledger."""
+    env = {k: v for k, v in os.environ.items() if not k.startswith(("TENET_", "CLAUDE_PLUGIN_", "CLAUDE_CONFIG_DIR"))}
+    env["HOME"] = str(home)
+    return subprocess.run(["/bin/sh", "-c", script], env=env, capture_output=True, text=True)
 
 
 class VaultCase(unittest.TestCase):

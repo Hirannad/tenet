@@ -1,6 +1,7 @@
 """Where things are. The only place that resolves the ledger path."""
 import json
 import os
+import shlex
 from pathlib import Path
 
 PLUGIN_ROOT = Path(__file__).resolve().parent.parent
@@ -21,6 +22,12 @@ def data_dir():
     """The harness-assigned plugin data directory, or TENET_DATA for tests and manual runs."""
     value = os.environ.get("CLAUDE_PLUGIN_DATA") or os.environ.get("TENET_DATA")
     return Path(value).expanduser() if value else None
+
+
+def command(vault, data, args):
+    """A cli.py command line for a hook to print. The agent's Bash tool has none of the hook's
+    plugin environment, so the line carries the ledger and the data directory itself."""
+    return f"TENET_LEDGER={shlex.quote(str(vault))} TENET_DATA={shlex.quote(str(data))} python3 {shlex.quote(str(CLI))} {args}"
 
 
 def write_atomic(path, text, newline=None):

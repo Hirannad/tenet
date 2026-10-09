@@ -164,7 +164,7 @@ def gate(payload, vault, data):
         items.append({"question": question, "draft": draft.name, "sha1": _digest(draft)})
     ticket = f"{date.today().isoformat()}-{session[:8]}"
     paths.write_atomic(_state(data) / "tickets" / f"{ticket}.json", json.dumps({"session": session, "items": items}, ensure_ascii=False))
-    cmd = f'python3 "{paths.CLI}" verdict apply --ticket {ticket}'
+    cmd = paths.command(vault, data, f"verdict apply --ticket {ticket}")
     return (
         f"TENET VERDICT — resting point. {len(drafts)} ledger draft(s) are waiting; this round asks {k}.\n"
         "Call AskUserQuestion ONCE with exactly this questions array; do not rewrite labels, previews or question texts:\n"

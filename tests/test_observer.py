@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from tenet import cli, promote  # noqa: E402
 from tenet.observer import brief, run, textindex, transcripts, usage  # noqa: E402
-from tests.helpers import VaultCase, note  # noqa: E402
+from tests.helpers import VaultCase, as_agent, note  # noqa: E402
 
 
 def session(root, prompts=(), assistant=(), asked=(), sid="s1", day=None):
@@ -158,10 +158,10 @@ class Runner(VaultCase):
         self.assertEqual(run.due(self.vault, data, True), "no brief computed yet")
         run._write_status(data, last_ok=time.time() - 8 * 86400, last_attempt=time.time() - 25 * 3600)
         self.assertEqual(run.due(self.vault, data, True), "stale")
-        self.assertIn("TENET BRIEF STALE", run.banners(data)[0])
+        self.assertIn("TENET BRIEF STALE", run.banners(self.vault, data)[0])
         run._write_status(data, last_ok=time.time(), last_attempt=time.time(), error="Boom: x")
         self.assertIsNone(run.due(self.vault, data, True))
-        self.assertIn("TENET OBSERVER FAILING: Boom: x", run.banners(data))
+        self.assertIn("TENET OBSERVER FAILING: Boom: x", run.banners(self.vault, data))
 
     def test_second_scan_yields_to_the_lock(self):
         import fcntl
@@ -268,7 +268,10 @@ class ObserverReviewFindings(VaultCase):
     def test_a_scan_that_never_started_is_reported(self):
         data = self.tmp / "data"
         run._write_status(data, spawned=time.time() - 600)
-        self.assertTrue(any("never recorded a start" in b for b in run.banners(data)))
+        banner = next(b for b in run.banners(self.vault, data) if "never recorded a start" in b)
+        got = as_agent(banner.split("`")[1], self.tmp / "home")  # the command it hands over runs as printed
+        self.assertEqual(got.returncode, 0, got.stdout + got.stderr)
+        self.assertIn("scan:", got.stdout)
 
     def test_an_aliased_category_resolves_to_its_hub(self):
         self.write("2026-09-01-x.md", note(categories=('"[[Methods|módszerek]]"',)))

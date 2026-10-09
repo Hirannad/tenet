@@ -84,13 +84,13 @@ def due(vault, data, matched):
     return None
 
 
-def banners(data):
+def banners(vault, data):
     """Lines that make a stale or failing observer impossible to miss."""
     st, now, out = status(data), time.time(), []
     last_ok = float(st.get("last_ok") or 0)
     spawned, attempt = float(st.get("spawned") or 0), float(st.get("last_attempt") or 0)
     if spawned and attempt < spawned and now - spawned > 120:
-        out.append(f"TENET OBSERVER FAILING: the background scan launched {date.fromtimestamp(spawned).isoformat()} never recorded a start. Run `python3 tenet/cli.py observe scan` by hand to see why.")
+        out.append(f"TENET OBSERVER FAILING: the background scan launched {date.fromtimestamp(spawned).isoformat()} never recorded a start. Run `{paths.command(vault, data, 'observe scan')}` by hand to see why.")
     if st.get("error"):
         out.append(f"TENET OBSERVER FAILING: {st['error']}")
     errors = paths.verdict_errors(data)

@@ -3,6 +3,8 @@
 One line per version, keyed by version rather than commit. The narrative entries up to 2.2.7 are
 in `git show tenet--v2.2.7:CHANGELOG.md`; the commit behind each version carries its reasoning.
 
+- **3.4.1** (2026-10-09): the commands the hooks print (`verdict apply`, the `observe scan` banner)
+  carry `TENET_LEDGER` and `TENET_DATA`, so they run as printed from the agent's Bash tool.
 - **3.4.0** (2026-10-09): pattern drafts, and a debt pass.
   - The sweep lists groups of accepted decisions that may share an insight. The observer drafts a
     `proposed` pattern only from a verbatim quote of the user's (#2). The inbox line hands

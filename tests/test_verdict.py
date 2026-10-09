@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from tenet import cli, paths, promote, verdict  # noqa: E402
 from tenet.observer import run  # noqa: E402
-from tests.helpers import VaultCase, note  # noqa: E402
+from tests.helpers import VaultCase, as_agent, note  # noqa: E402
 
 
 def rec(kind, content, **extra):
@@ -126,11 +126,29 @@ class StopHook(GateBase):
         self.assertEqual(got["hookEventName"], "Stop")
         self.assertIn("TENET VERDICT", got["additionalContext"])
 
+    def test_the_printed_command_runs_as_printed(self):
+        # The default ledger is the reported case, where only the data directory is missing; a
+        # ledger set in /plugin reaches the hook and not the agent's shell either.
+        for ledger in ("default", "configured"):
+            with self.subTest(ledger=ledger):
+                home = self.tmp / ledger
+                if ledger == "default":
+                    (home / "Claude").mkdir(parents=True)
+                    (home / "Claude" / "ledger").symlink_to(self.vault)
+                payload = self.transcript()
+                payload["session_id"] = ledger
+                text = json.loads(self.run_hook(payload))["hookSpecificOutput"]["additionalContext"]
+                question = json.loads(text.split("\n")[2])[0]["question"]
+                script = text.split("pass the answers through unchanged: ")[1].split("\nJSON\n")[0] + "\nJSON\n"
+                script = script.replace("<the answers object>", json.dumps({question: "Later"}))
+                got = as_agent(script.replace("<true if the dialog timed out>", "false"), home)
+                self.assertIn("VERDICT: 1 later", got.stdout, got.stdout + got.stderr)
+
     def test_a_failure_is_silent_now_and_shown_at_the_next_session_start(self):
         with mock.patch.object(verdict, "gate", side_effect=RuntimeError("boom")):
             self.assertEqual(self.run_hook(self.transcript()), "")
         self.assertIn("RuntimeError: boom", paths.verdict_errors(self.data).read_text())
-        self.assertTrue(any(b.startswith("TENET VERDICT GATE: 1 error(s)") for b in run.banners(self.data)))
+        self.assertTrue(any(b.startswith("TENET VERDICT GATE: 1 error(s)") for b in run.banners(self.vault, self.data)))
 
 
 class ReviewFindings(GateBase):

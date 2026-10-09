@@ -44,7 +44,7 @@ def briefing(vault, compact):
         except OSError as exc:
             reason = None
             out.append(f"TENET OBSERVER FAILING: cannot launch a scan from {data}: {exc}")
-    out += run.banners(data)
+    out += run.banners(vault, data)
     if text is None:
         out += [f"LEDGER: {vault}", "TENET BRIEF: none computed yet" + (" — a first scan was launched" if reason else "") + "; ask for a note by name."]
     else:
