@@ -116,6 +116,24 @@ class Compare(SurfaceCase):
         self.assertIn("  unchanged   enabled_plugin_skills   2 (q@m enabled, nothing installed)", out)
 
 
+    def test_a_switched_off_plugin_is_not_on_the_surface(self):
+        # A quarantined plugin stays in enabledPlugins as false; counting it hides the quarantine.
+        self.put("settings.json", {"enabledPlugins": {"on@m": True, "off@m": False}})
+        out, _ = self.run_main("--record")
+        self.assertEqual(json.loads(out)["surfaces"]["enabled_plugins"], {"count": 1, "keys": ["on@m"]})
+
+    def test_only_skill_folders_are_global_skills_and_only_manifests_make_skills_dir_plugins(self):
+        self.put("skills/plain/SKILL.md", "x")
+        self.put("skills/wrap/SKILL.md", "x")
+        self.put("skills/wrap/.claude-plugin/plugin.json", {"name": "wrap"})
+        (self.cfg / "skills/synced/bucket").mkdir(parents=True)  # a sync bucket, not a skill
+        (self.cfg / "plugins/data/other-inline").mkdir(parents=True)  # a plugin's data, not a skills dir
+        out, _ = self.run_main("--record")
+        got = json.loads(out)["surfaces"]
+        self.assertEqual(got["global_skills"], {"count": 2, "keys": ["plain", "wrap"]})
+        self.assertEqual(got["skills_dir_plugins"], {"count": 1, "keys": ["wrap"]})
+
+
 class Record(SurfaceCase):
     def test_keeps_keys_and_carries_hand_notes_forward(self):
         self.put("settings.json", {"permissions": {"allow": ["Bash(ls *)", 'say "hi"']}})

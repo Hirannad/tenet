@@ -30,7 +30,6 @@ FROM_SETTINGS = ("permissions_allow", "permissions_deny", "permissions_ask", "en
 SETTINGS_PATHS = {"permissions_allow": (("permissions", "allow"), True),
                   "permissions_deny": (("permissions", "deny"), True),
                   "permissions_ask": (("permissions", "ask"), True),
-                  "enabled_plugins": (("enabledPlugins",), False),
                   "extraKnownMarketplaces": (("extraKnownMarketplaces",), False)}
 RECORD = f'python3 "{paths.CLI}" audit surface --record'
 NEEDS = "needs settings.json and plugins/installed_plugins.json"
@@ -157,12 +156,16 @@ def measure(key, cdir, settings):
     """(count, note, keys). count is None when the surface could not be read, which is not 0."""
     try:
         if key == "global_skills":
-            return _listing(cdir, "skills/", lambda e: e.is_dir())
+            # a folder without SKILL.md (the desktop's skills/synced bucket) loads no skill
+            return _listing(cdir, "skills/", lambda e: e.is_dir() and os.path.isfile(os.path.join(e.path, "SKILL.md")))
         if key == "global_agents":
             return _listing(cdir, "agents/", lambda e: e.name.endswith(".md") and not e.is_dir(),
                             lambda n: n[:-3])
         if key == "skills_dir_plugins":
-            return _listing(cdir, "plugins/data", lambda e: True)
+            # a skills folder with a manifest loads as <name>@skills-dir; plugins/data names every
+            # plugin that ever stored data, which is not this
+            return _listing(cdir, "skills/", lambda e: e.is_dir() and os.path.isfile(
+                os.path.join(e.path, ".claude-plugin", "plugin.json")))
         if key == "enabled_plugin_skills":
             return _plugin_skills(cdir, settings)
         if key == "user_scope_mcp":
@@ -178,6 +181,11 @@ def measure(key, cdir, settings):
             return None, "", []
         if key == "global_hook_entries":
             return _hooks(settings)
+        if key == "enabled_plugins":
+            # a false entry is a switched-off (quarantined) plugin, so it is off the surface
+            _, note, keys = _json_surface(settings, ("enabledPlugins",), "settings.json", False)
+            on = [k for k in keys if settings["enabledPlugins"][k] not in (None, False)]
+            return len(on), note, on
         path, ordered = SETTINGS_PATHS[key]
         return _json_surface(settings, path, "settings.json", ordered)
     except Unread:
