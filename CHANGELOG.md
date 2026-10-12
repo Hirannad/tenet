@@ -3,6 +3,10 @@
 One line per version, keyed by version rather than commit. The narrative entries up to 2.2.7 are
 in `git show tenet--v2.2.7:CHANGELOG.md`; the commit behind each version carries its reasoning.
 
+- **3.5.0** (2026-10-12): the sweep writes every proposal and question that waits on the user
+  into the digest's frontmatter as an `open:` list, one JSON object per line, and carries the ones
+  without a `verdict` into the next digest, so a session-start hook can keep asking until each has
+  an answer.
 - **3.4.3** (2026-10-10): `enabled_plugin_skills` counts the skills a plugin declares (its
   marketplace entry's `skills`, else its manifest's, else `skills/`), not every `SKILL.md` in a
   git-subdir install.

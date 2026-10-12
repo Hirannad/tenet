@@ -59,6 +59,25 @@ proposals, no prose padding. Lead with the revisit sweep; that is what the user 
 If everything is clean, say so in two lines. A digest that manufactures work to look useful is
 worse than a short one.
 
+**Every proposal and question that waits on the user also goes into the frontmatter** as an `open:`
+list, so a session-start hook can keep asking until each has a verdict; prose alone is where they
+die. One JSON object per line, which is valid YAML:
+
+```yaml
+open:
+  - {"id": "sweep-hub-invoice-email", "question": "Legyen hub az Invoice Email témának?", "options": ["Igen, a rootban", "Még ne"], "recommended": "Igen, a rootban"}
+```
+
+`id` is `sweep-` plus a slug that stays the same across runs; `question` is one line that stands
+without the digest, in the digest's language; 2–4 `options`, one of them `recommended`. Inbox
+drafts are not items: the inbox already brings them back. Never write `verdict` or `decided`;
+those are the user's answer, written back by whatever closes the items.
+
+Before writing, read the previous digest's `open:`. Copy every item without a `verdict` into this
+one under the same id, unless this run's evidence settled it; then leave it out and say why in one
+line. An item with a `verdict` is decided: if the change it approved is not visible in the ledger
+yet, report that as a finding, not as a new item.
+
 There is no index file to maintain; a hand-written one would only go stale.
 
 ## What this must never do
