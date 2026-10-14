@@ -17,6 +17,9 @@ from tenet.observer import textindex
 MIN_HITS = 4  # distinct group terms a sentence must contain: fewer matches a topic, not an idea
 MIN_WORDS, MAX_WORDS = 6, 45
 SENTENCE = re.compile(r"(?<=[.!?])\s+|\n+")
+# A path from the root is copied out of a tool, not typed: it marks pasted context. `~/`, `./`
+# and a `/command` are what a user writes by hand, so they do not count.
+ROOT_PATH = re.compile(r"(?<![\w.~])/\w+/")
 PENDING = "<!-- pattern-statement: pending -->"
 FIELDS = ("title", "statement", "holds", "holds_not")
 
@@ -34,13 +37,14 @@ def _emitted(vault):
 
 def find_quote(group, sessions):
     """The user's best-matching sentence for a group: (hits, quote, date, project) or None. Only
-    human prompts are searched, since `transcripts` keeps no other author."""
+    human prompts are searched, since `transcripts` keeps no other author, and a sentence with a
+    root path in it is skipped as pasted context."""
     terms = set(group["terms"])
     best = None
     for s in sessions:
         for prompt in s["prompts"]:
             for sentence in SENTENCE.split(prompt):
-                if not MIN_WORDS <= len(sentence.split()) <= MAX_WORDS:
+                if not MIN_WORDS <= len(sentence.split()) <= MAX_WORDS or ROOT_PATH.search(sentence):
                     continue
                 hits = len(terms & set(textindex.tokens(sentence)))
                 if hits >= MIN_HITS and (best is None or hits > best[0]):

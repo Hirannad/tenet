@@ -3,6 +3,8 @@
 One line per version, keyed by version rather than commit. The narrative entries up to 2.2.7 are
 in `git show tenet--v2.2.7:CHANGELOG.md`; the commit behind each version carries its reasoning.
 
+- **3.6.1** (2026-10-14): a pattern draft's quote is something the user typed. `find_quote` skips a
+  sentence with a root path in it (`/Users/...`) as pasted context; `~/`, `./` and a `/command` still count.
 - **3.6.0** (2026-10-13): a pattern draft states its rule before the user is asked. The observer
   names the draft after one of its decisions, not a hash, keeps the quote as evidence under Where it
   came from, and writes no empty heading. At a resting point the Stop hook has the session's model

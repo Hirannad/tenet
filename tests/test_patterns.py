@@ -78,6 +78,24 @@ class Drafts(PatternCase):
         # Two group terms in a sentence are a topic, below MIN_HITS.
         self.assertEqual(pattern_drafts.write(self.vault, [prompt_session("nézd meg az ellenpróba kapu állapotát most")])[1], 0)
 
+    PASTED = "In the repo /Users/me/proj the ellenpróba kapu re-runs a második kör when a szám slips csendben past ellenőrzés."
+
+    def test_a_sentence_with_an_absolute_path_is_pasted_context_not_a_quote(self):
+        self.assertEqual(pattern_drafts.write(self.vault, [prompt_session(self.PASTED)])[1], 0)
+
+    def test_the_users_own_sentence_wins_over_a_pasted_one_with_more_terms(self):
+        group = patterns.candidates(self.vault)[1][0]
+        # Without its path the pasted sentence carries more group terms, so it would win.
+        unpathed = self.PASTED.replace("/Users/me/proj", "proj")
+        self.assertEqual(pattern_drafts.find_quote(group, [prompt_session(f"{unpathed}\n{self.QUOTE}")])[1], unpathed)
+        self.assertEqual(pattern_drafts.find_quote(group, [prompt_session(f"{self.PASTED}\n{self.QUOTE}")])[1], self.QUOTE)
+
+    def test_a_typed_home_path_or_slash_command_is_still_the_users_own(self):
+        group = patterns.candidates(self.vault)[1][0]
+        for said in (self.QUOTE[:-1] + ", a /wrap előtt.", self.QUOTE[:-1] + " a ~/Claude/ledger alatt."):
+            with self.subTest(said):
+                self.assertEqual(pattern_drafts.find_quote(group, [prompt_session(said)])[1], said)
+
     def test_the_quote_is_evidence_and_it_is_proposed_once(self):
         self.assertEqual(pattern_drafts.write(self.vault, [prompt_session(self.QUOTE)]), (1, 1))
         (draft,) = ledger.md_files(self.vault / "inbox")
