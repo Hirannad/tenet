@@ -22,8 +22,10 @@ what the author runs daily, with no support and no stability promise.
   `inbox/` and a session reaches a resting point (enough work done, nothing running in the
   background, no open task, the last message not a question), one AskUserQuestion asks for one to
   four verdicts, once per session: accept, discard, move to the project's auto memory, or later.
-  A script applies the answers; the model never edits a status. `/tenet:tenet-capture` writes
-  drafts by hand, and its `review` mode is the manual path.
+  A script applies the answers; the model never edits a status. A pattern draft is stated first:
+  at a resting point the session's model writes the rule its decisions share, where it holds and
+  where it does not, and the draft is renamed after it. `/tenet:tenet-capture` writes drafts by
+  hand, and its `review` mode is the manual path.
 - **`/tenet:tenet-sweep`** judges which reversal conditions may have fired, and reports dead links,
   orphans, stale drafts and repeated process deviations. It proposes; it never edits a decision.
 - **`/tenet:tenet-audit`** scores `CLAUDE.md` against a rubric, counts rules nothing enforces,
@@ -44,7 +46,7 @@ already holds markdown or an `.obsidian/`.
 | session start or `/clear` | promote reviewed drafts, print this project's brief | ~30 ms; the brief is capped at 4 KB and says what it withheld |
 | session start, when due | a detached background scan (brief older than a week, notes changed, or a new project) | ~2 s, never waited on |
 | after compaction | the brief again, no scan | the same |
-| after each response | is this a resting point with drafts waiting? If so, one verdict dialog | ~0.1 s with an empty inbox; reads the transcript only when drafts wait; asks at most once per session |
+| after each response | is this a resting point with drafts waiting? If so, one verdict dialog, or first a pattern draft's statement | ~0.1 s with an empty inbox; reads the transcript only when drafts wait; asks at most once per session |
 | a slash command | capture, sweep or audit | only when you invoke it |
 
 Nothing runs on a timer. A stale or failing scan prints a
@@ -85,7 +87,8 @@ project path, session id: which notes were used where, kept for 180 days) and th
 began to `_meta/observer/state.json`. When a group of related decisions matches a sentence from one
 of your prompts, it writes a `proposed` pattern draft to `inbox/` that quotes that sentence verbatim,
 with its date and project folder name, and lists the group in `_meta/observer/patterns.json` so it
-is proposed only once. It writes its briefs and status to the data directory Claude Code assigns the plugin (`~/.claude/plugins/data/tenet-…/`).
+is proposed only once. `cli.py pattern name` later writes the model's statement into that draft and
+renames it after the statement's title. It writes its briefs and status to the data directory Claude Code assigns the plugin (`~/.claude/plugins/data/tenet-…/`).
 Nothing else under `~/.claude` is written.
 
 **What the observer reads:** your session transcripts of the last 30 days

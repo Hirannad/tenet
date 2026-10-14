@@ -69,8 +69,9 @@ user's own quote exists; that draft arrives in `inbox/`, so do not write one her
   Is there a principle here you would state in your own words?
 ```
 
-A pattern records the user's own insight. Authoring one for them — however well — replaces their
-thinking with yours, which is precisely what this vault exists to prevent.
+A pattern records the user's own insight. Without their own words on record, authoring one for
+them — however well — replaces their thinking with yours, which is precisely what this vault
+exists to prevent.
 
 ## 7. Topic candidates
 

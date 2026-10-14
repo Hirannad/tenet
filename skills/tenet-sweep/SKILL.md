@@ -38,8 +38,8 @@ Run all of them, then write the digest. Detail for each is in
 5. **Unjustified raw files.** Files in `raw/` with no companion `source` note explaining why
    they are kept.
 6. **Pattern candidates.** Three or more decisions sharing a rationale suggest an undistilled
-   principle. **Propose it as a question, never write the pattern.** A pattern must be the
-   user's own insight; drafting one on their behalf breaks the rule the whole vault rests on.
+   principle. **Propose it as a question, never write the pattern.** A pattern must rest on the
+   user's own words; drafting one without them breaks the rule the whole vault rests on.
 7. **Topic candidates.** Five or more notes sharing a category with no hub note suggest a topic
    worth promoting. Propose the hub note.
 8. **Repeated process deviations.** Read the `feedback` entries from Claude Code's auto memory

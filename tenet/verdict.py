@@ -10,7 +10,7 @@ from datetime import date
 from pathlib import Path
 
 from tenet import ledger, paths, promote
-from tenet.observer import transcripts
+from tenet.observer import pattern_drafts, transcripts
 
 MIN_WORK = 20
 INTERACTIVE = ("claude-desktop", "cli")
@@ -89,13 +89,15 @@ def busy(payload):
 
 
 def eligible(vault):
-    """Drafts ready for a verdict: proposed, inside the caps, no literal placeholder."""
+    """Drafts ready for a verdict: proposed, inside the caps, no literal placeholder, and stated
+    (a pattern draft waits for its statement)."""
     conv = ledger.conventions()
     heading, _ = ledger.section_heading(vault)
     out = []
     for draft in ledger.md_files(Path(vault) / "inbox"):
         fm, block, body = ledger.read(draft)
-        if fm.get("status") == "proposed" and not ledger.cap_problems(fm, block, body, conv, heading):
+        if fm.get("status") == "proposed" and pattern_drafts.PENDING not in body \
+                and not ledger.cap_problems(fm, block, body, conv, heading):
             out.append(draft)
     return out
 
@@ -128,23 +130,55 @@ def _deferrals(data):
         return {}
 
 
+def _claim(marker):
+    """Exclusive create: two hooks racing on one stop (the plugin can load twice) fire once."""
+    try:
+        with open(marker, "x") as f:
+            f.write(date.today().isoformat() + "\n")
+    except FileExistsError:
+        return False
+    return True
+
+
+def _naming(vault, data, draft):
+    """The instruction to state a pattern draft: the observer found the user's words, but only a
+    model can phrase the rule its decisions share."""
+    fm, _, _ = ledger.read(draft)
+    stems = [ledger.link_target(t) for item in ledger.listed(fm, "derived") for t in ledger.WIKILINK.findall(item)]
+    cmd = paths.command(vault, data, f"pattern name {draft.name}")
+    return (
+        f"TENET PATTERN — resting point. inbox/{draft.name} is a pattern draft built on a quote of the user's. "
+        "It states nothing yet, so it is not put to the user. Read the decisions it derives from:\n"
+        + "".join(f"- {Path(vault) / stem}.md\n" for stem in stems)
+        + "State the rule they share in one sentence, in the language they are written in; the quote is evidence "
+        "for it, not its wording. Then, without asking the user anything, run:\n"
+        f"{cmd} <<'JSON'\n"
+        '{"title": "<three to seven words naming the rule>", "statement": "<the rule in one sentence>", '
+        '"holds": "<where it holds>", "holds_not": "<where it does not hold>"}\nJSON\n'
+        "The command writes the sections and renames the draft after the title; never edit the draft yourself. "
+        "Finish with one sentence: the title and the rule."
+    )
+
+
 def gate(payload, vault, data):
     """The instruction to inject at this stop, or None. The session marker is written first,
-    so a failing round cannot fire twice."""
+    so a failing round cannot fire twice. A pattern draft is stated before any verdict round,
+    once per session, so a round never shows the user a bare quote."""
     # Cheapest first: this runs after every response, and reading the transcript is the slow part.
     session = payload.get("session_id") or ""
-    if not session or (_state(data) / "sessions" / session).exists():
+    markers = _state(data) / "sessions"
+    if not session or (markers / session).exists():
         return None
+    unstated = [] if (markers / f"{session}.pattern").exists() else pattern_drafts.pending(vault)
     drafts = eligible(vault)
     k = batch_size(len(drafts))
-    if not k or busy(payload):
+    if not (unstated or k) or busy(payload):
         return None
+    if unstated:
+        return _naming(vault, data, unstated[0]) if _claim(markers / f"{session}.pattern") else None
     deferred = _deferrals(data)
     drafts.sort(key=lambda d: (-min(deferred.get(d.name, 0), 2), d.name))
-    try:  # exclusive create: two hooks racing on one stop (the plugin can load twice) fire once
-        with open(_state(data) / "sessions" / session, "x") as marker:
-            marker.write(date.today().isoformat() + "\n")
-    except FileExistsError:
+    if not _claim(markers / session):
         return None
     items, questions = [], []
     for i, draft in enumerate(drafts[:k], 1):

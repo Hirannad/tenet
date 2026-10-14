@@ -8,7 +8,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from tenet import bootstrap, inbox, ledger, paths, promote, sweep, verdict  # noqa: E402
-from tenet.observer import brief, run  # noqa: E402
+from tenet.observer import brief, pattern_drafts, run  # noqa: E402
 
 
 def _ledger(quiet_when_absent):
@@ -123,6 +123,9 @@ def main(argv=None):
     ver = sub.add_parser("verdict")
     ver.add_argument("action", choices=["apply"])
     ver.add_argument("--ticket", required=True)
+    pat = sub.add_parser("pattern")
+    pat.add_argument("action", choices=["name"])
+    pat.add_argument("draft")
     obs = sub.add_parser("observe")
     obs.add_argument("action", choices=["scan", "status"])
     obs.add_argument("--quiet", action="store_true")
@@ -155,6 +158,10 @@ def main(argv=None):
             print("tenet: no data directory; set TENET_DATA when running this by hand.")
             return 1
         print("\n".join(verdict.apply(vault, data, args.ticket, json.loads(sys.stdin.read() or "{}"))))
+        return 0
+    if args.command == "pattern":
+        import json
+        print("\n".join(pattern_drafts.name(vault, args.draft, json.loads(sys.stdin.read() or "{}"))))
         return 0
     render = {
         "promote": lambda: promote.run(vault),

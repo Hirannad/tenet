@@ -3,6 +3,11 @@
 One line per version, keyed by version rather than commit. The narrative entries up to 2.2.7 are
 in `git show tenet--v2.2.7:CHANGELOG.md`; the commit behind each version carries its reasoning.
 
+- **3.6.0** (2026-10-13): a pattern draft states its rule before the user is asked. The observer
+  names the draft after one of its decisions, not a hash, keeps the quote as evidence under Where it
+  came from, and writes no empty heading. At a resting point the Stop hook has the session's model
+  write the shared rule and its boundaries through `cli.py pattern name`, which renames the draft
+  after the rule's title; only then does a verdict round ask about it.
 - **3.5.0** (2026-10-12): the sweep writes every proposal and question that waits on the user
   into the digest's frontmatter as an `open:` list, one JSON object per line, and carries the ones
   without a `verdict` into the next digest, so a session-start hook can keep asking until each has
