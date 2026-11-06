@@ -67,6 +67,21 @@ Point a scheduler at `/tenet:tenet-sweep` if you want the sweep weekly.
 files). A pattern draft left in `inbox/` with the marker `pattern-statement: pending` is asked as an
 ordinary draft; discard it.
 
+### Rolling back
+
+1. In the marketplace clone (`claude plugin marketplace list --json` prints its `installLocation`,
+   `~/.claude/plugins/marketplaces/tenet` by default), which is shallow and carries no tags: `git -C
+   <clone> fetch --depth 1 origin tag tenet--v3.6.1`, `git -C <clone> checkout tenet--v3.6.1`, then
+   `claude plugin update tenet@tenet` and restart; `update` installs whatever version the clone
+   holds, older ones included. `claude plugin marketplace update tenet` puts the clone back on
+   `main`; the next `claude plugin update tenet@tenet` then reinstalls the current version.
+2. 3.6.1's next scan appends to `_meta/observer/usage.jsonl` again, from the last 30 days only, and
+   writes a fresh `state.json`; it writes `patterns.json` only when it next emits a pattern draft, so
+   a group proposed before the cut can be proposed again unless you kept your copy of the file.
+3. 3.6.1 asks any proposed draft in `inbox/` as an ordinary draft, a draft the sweep wrote included.
+4. The ledger's `.gitignore` edits are yours; 3.6.1 does not need them reverted.
+5. Verdicts and ledger decisions stay as decided; rolling back code rolls back no verdict.
+
 ## Requirements
 
 macOS or Linux, and Python 3.9 or newer (the macOS system one is enough); nothing else to install.

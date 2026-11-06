@@ -3,6 +3,11 @@
 One line per version, keyed by version rather than commit. The narrative entries up to 2.2.7 are
 in `git show tenet--v2.2.7:CHANGELOG.md`; the commit behind each version carries its reasoning.
 
+- **3.7.0** (2026-11-06): the observer's measuring half is gone: no usage log, no machine pattern
+  drafts, no naming round, no `pattern` subcommand, no pattern section in the sweep dump; the vault
+  template ignores observer state but tracks verdicts.jsonl; a rollback section in the README.
+  Upgrading: in the ledger, `git rm --cached _meta/observer/state.json` if tracked, and delete or
+  keep usage.jsonl, patterns.json and state.json. Decided in the ledger: 2026-11-06-ismetlodest-szamolunk-nem-hasznalatot.
 - **3.6.1** (2026-10-14): a pattern draft's quote is something the user typed. `find_quote` skips a
   sentence with a root path in it (`/Users/...`) as pasted context; `~/`, `./` and a `/command` still count.
 - **3.6.0** (2026-10-13): a pattern draft states its rule before the user is asked. The observer
