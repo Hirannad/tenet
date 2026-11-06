@@ -7,7 +7,7 @@ from datetime import date
 from pathlib import Path
 
 from tenet import paths
-from tenet.observer import brief, pattern_drafts, transcripts, usage
+from tenet.observer import brief, transcripts
 
 STALE_DAYS = 7
 RETRY_SECONDS = 24 * 3600
@@ -26,8 +26,10 @@ def status(data):
     return dict(line.split("=", 1) for line in lines if "=" in line)
 
 
-def _write_status(data, **values):
+def _write_status(data, _drop=(), **values):
     current = status(data)
+    for k in _drop:
+        current.pop(k, None)
     current.update({k: str(v) for k, v in values.items()})
     f = _status_file(data)
     f.parent.mkdir(parents=True, exist_ok=True)
@@ -45,16 +47,14 @@ def scan(vault, data):
             return None
         _write_status(data, last_attempt=int(time.time()))
         try:
-            sessions, oldest = transcripts.sessions(30)
-            new_uses = usage.update(vault, sessions, oldest)
+            sessions, _ = transcripts.sessions(30)
             count = brief.write_all(vault, data, sessions, date.today().isoformat())
-            groups, drafts = pattern_drafts.write(vault, sessions)
         except Exception as exc:  # noqa: BLE001
             _write_status(data, error=f"{type(exc).__name__}: {exc}"[:300])
             raise
-        _write_status(data, last_ok=int(time.time()), error="", sessions=len(sessions), projects=count, new_uses=new_uses,
-                      pattern_groups=groups, pattern_drafts=drafts)
-        return len(sessions), count, new_uses
+        _write_status(data, last_ok=int(time.time()), error="", sessions=len(sessions), projects=count,
+                      _drop=("new_uses", "pattern_groups", "pattern_drafts"))
+        return len(sessions), count
 
 
 def spawn(data):

@@ -37,9 +37,8 @@ Run all of them, then write the digest. Detail for each is in
 4. **Orphans.** Notes nothing links to and which link to nothing.
 5. **Unjustified raw files.** Files in `raw/` with no companion `source` note explaining why
    they are kept.
-6. **Pattern candidates.** Three or more decisions sharing a rationale suggest an undistilled
-   principle. **Propose it as a question, never write the pattern.** A pattern must rest on the
-   user's own words; drafting one without them breaks the rule the whole vault rests on.
+6. **Pattern candidates.** Retired in 3.7.0: the observer no longer groups notes or drafts
+   patterns, and the dump has no section for it. Nothing to do.
 7. **Topic candidates.** Five or more notes sharing a category with no hub note suggest a topic
    worth promoting. Propose the hub note.
 8. **Repeated process deviations.** Read the `feedback` entries from Claude Code's auto memory
@@ -83,7 +82,6 @@ There is no index file to maintain; a hand-written one would only go stale.
 ## What this must never do
 
 - Change a decision's `status`. Reversing a decision is the user's call.
-- Write a `pattern`. Propose; never author.
 - Delete anything. Propose deletions in the digest.
 - Move notes out of `inbox/`. `tenet/promote.py` owns that, off the SessionStart hook.
 - Touch anything in `raw/`.

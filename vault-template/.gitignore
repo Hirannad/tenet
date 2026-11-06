@@ -3,3 +3,8 @@
 .obsidian/cache
 .trash/
 .DS_Store
+.obsidian/graph.json
+# observer state holds session ids and local paths: per-machine, not knowledge
+_meta/observer/*
+# date, draft name, verdict: the record the retro reads
+!_meta/observer/verdicts.jsonl

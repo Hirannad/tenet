@@ -22,10 +22,8 @@ what the author runs daily, with no support and no stability promise.
   `inbox/` and a session reaches a resting point (enough work done, nothing running in the
   background, no open task, the last message not a question), one AskUserQuestion asks for one to
   four verdicts, once per session: accept, discard, move to the project's auto memory, or later.
-  A script applies the answers; the model never edits a status. A pattern draft is stated first:
-  at a resting point the session's model writes the rule its decisions share, where it holds and
-  where it does not, and the draft is renamed after it. `/tenet:tenet-capture` writes drafts by
-  hand, and its `review` mode is the manual path.
+  A script applies the answers; the model never edits a status. `/tenet:tenet-capture` writes
+  drafts by hand, and its `review` mode is the manual path.
 - **`/tenet:tenet-sweep`** judges which reversal conditions may have fired, and reports dead links,
   orphans, stale drafts and repeated process deviations. It proposes; it never edits a decision.
 - **`/tenet:tenet-audit`** scores `CLAUDE.md` against a rubric, counts rules nothing enforces,
@@ -46,7 +44,7 @@ already holds markdown or an `.obsidian/`.
 | session start or `/clear` | promote reviewed drafts, print this project's brief | ~30 ms; the brief is capped at 4 KB and says what it withheld |
 | session start, when due | a detached background scan (brief older than a week, notes changed, or a new project) | ~2 s, never waited on |
 | after compaction | the brief again, no scan | the same |
-| after each response | is this a resting point with drafts waiting? If so, one verdict dialog, or first a pattern draft's statement | ~0.1 s with an empty inbox; reads the transcript only when drafts wait; asks at most once per session |
+| after each response | is this a resting point with drafts waiting? If so, one verdict dialog | ~0.1 s with an empty inbox; reads the transcript only when drafts wait; asks at most once per session |
 | a slash command | capture, sweep or audit | only when you invoke it |
 
 Nothing runs on a timer. A stale or failing scan prints a
@@ -61,6 +59,13 @@ Point a scheduler at `/tenet:tenet-sweep` if you want the sweep weekly.
 | `TENET_LEDGER` | an override for one shell or one run |
 | `CLAUDE_MD`, `ENFORCEMENT_TABLE` | the instruction file and enforcement table the audit reads |
 | `CLAUDE_CONFIG_DIR` | Claude Code's config tree |
+
+**Upgrading from 3.6.x.** The observer no longer writes `_meta/observer/usage.jsonl`,
+`patterns.json` and `state.json` and does not read them. In the ledger run
+`git rm --cached _meta/observer/state.json` if it is tracked, and
+`rm _meta/observer/usage.jsonl _meta/observer/patterns.json _meta/observer/state.json` (or keep the
+files). A pattern draft left in `inbox/` with the marker `pattern-statement: pending` is asked as an
+ordinary draft; discard it.
 
 ## Requirements
 
@@ -82,21 +87,14 @@ line, takes a discarded draft out of the inbox (`git rm` when the ledger tracks 
 move into the plugin's data directory, so it stays recoverable), and appends date, draft name and verdict to
 `_meta/observer/verdicts.jsonl`; session start moves approved drafts from
 `inbox/` to the ledger root, with `git mv` when the ledger is a repository (which leaves a staged
-rename there); the observer appends to `_meta/observer/usage.jsonl` in the ledger (date, note name,
-project path, session id: which notes were used where, kept for 180 days) and the date its measurement
-began to `_meta/observer/state.json`. When a group of related decisions matches a sentence from one
-of your prompts, it writes a `proposed` pattern draft to `inbox/` that quotes that sentence verbatim,
-with its date and project folder name, and lists the group in `_meta/observer/patterns.json` so it
-is proposed only once. `cli.py pattern name` later writes the model's statement into that draft and
-renames it after the statement's title. It writes its briefs and status to the data directory Claude Code assigns the plugin (`~/.claude/plugins/data/tenet-…/`).
+rename there); the observer writes its briefs and status to the data directory Claude Code assigns the
+plugin (`~/.claude/plugins/data/tenet-…/`) and nothing to the ledger.
 Nothing else under `~/.claude` is written.
 
 **What the observer reads:** your session transcripts of the last 30 days
 (`~/.claude/projects/*/*.jsonl`). Your prompts, the questions and options of AskUserQuestion calls,
-and the file paths tools touched decide which notes matter in which project; the assistant's text
-is searched only for ledger note names it cited. None of that text is stored, with one exception: a
-pattern draft quotes the single prompt sentence it was built from. A brief holds note names and the
-first sentence of each note, and the usage log holds what is listed above.
+and the file paths tools touched decide which notes matter in which project. None of that text is
+stored. A brief holds note names and the first sentence of each note.
 
 **What it reads from Claude's auto memory** (`~/.claude/projects/*/memory/`): the sweep selects
 notes of `type: feedback` and prints each one's project, filename and `description:` line, and
@@ -111,9 +109,6 @@ project's `CLAUDE.md` and `rules/`, `CLAUDE.local.md`, managed policy, the setti
 
 ## Known limits
 
-- Relevance is measured, not perfect: of the notes cited in work sessions over the last 30 days, the
-  brief of the project they were cited in shows about two thirds. A citation counts only when the
-  note's name appears, so a decision applied without naming it goes unseen.
 - A project gets its own brief from its first scanned session; before that the session start
   shows the global brief (core and fresh notes).
 - `audit layers` counts directives, not tokens, and undercounts a paragraph holding several rules.

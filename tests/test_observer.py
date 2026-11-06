@@ -11,13 +11,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from tenet import cli, promote  # noqa: E402
-from tenet.observer import brief, run, textindex, transcripts, usage  # noqa: E402
+from tenet.observer import brief, run, textindex, transcripts  # noqa: E402
 from tests.helpers import VaultCase, as_agent, note  # noqa: E402
 
 
-def session(root, prompts=(), assistant=(), asked=(), sid="s1", day=None):
+def session(root, prompts=(), asked=(), sid="s1", day=None):
     return {"id": sid, "cwd": root, "root": root, "scheduled": False, "prompts": list(prompts),
-            "asked": list(asked), "paths": [], "assistant": list(assistant), "date": day or date.today().isoformat()}
+            "asked": list(asked), "paths": [], "date": day or date.today().isoformat()}
 
 
 def line(record):
@@ -133,25 +133,6 @@ class Brief(VaultCase):
         self.assertIn("no project match", text)
 
 
-class Usage(VaultCase):
-    def test_citations_count_but_ledger_sessions_and_hubs_do_not(self):
-        self.write("2026-01-01-a.md", note())
-        sessions = [session("/work", assistant=["per [[2026-01-01-a]] and Methods"], sid="w"),
-                    session(str(self.vault.resolve()), assistant=["2026-01-01-a"], sid="l")]
-        self.assertEqual(usage.update(self.vault, sessions, "2026-08-29"), 1)
-        events = usage.load(self.vault)
-        self.assertEqual([(e["note"], e["source"]) for e in events], [("2026-01-01-a", "w")])
-        self.assertEqual(usage.update(self.vault, sessions, "2026-08-29"), 0)  # re-scan adds nothing
-
-    def test_draft_related_link_counts_and_measured_since_is_set_once(self):
-        self.write("2026-01-01-a.md", note())
-        self.write("inbox/d.md", note(status="proposed", extra='related:\n  - "[[2026-01-01-a]]"\n'))
-        usage.update(self.vault, [], "2026-08-29")
-        self.assertEqual(usage.load(self.vault)[0]["source"], "d.md")
-        usage.update(self.vault, [], "2026-09-10")
-        self.assertEqual(usage.measured_since(self.vault), "2026-08-29")
-
-
 class Runner(VaultCase):
     def test_due_and_banners(self):
         data = self.tmp / "data"
@@ -162,6 +143,15 @@ class Runner(VaultCase):
         run._write_status(data, last_ok=time.time(), last_attempt=time.time(), error="Boom: x")
         self.assertIsNone(run.due(self.vault, data, True))
         self.assertIn("TENET OBSERVER FAILING: Boom: x", run.banners(self.vault, data))
+
+    def test_scan_returns_sessions_and_briefs_and_drops_the_retired_keys(self):
+        data = self.tmp / "data"
+        run._write_status(data, new_uses=1, pattern_groups=2, pattern_drafts=0)
+        self.assertEqual(run.scan(self.vault, data), (0, 0))
+        st = run.status(data)
+        self.assertTrue(st.get("last_ok"))
+        for key in ("new_uses", "pattern_groups", "pattern_drafts"):
+            self.assertNotIn(key, st)
 
     def test_second_scan_yields_to_the_lock(self):
         import fcntl
@@ -214,17 +204,6 @@ class Runner(VaultCase):
 
 class ObserverReviewFindings(VaultCase):
     """Regressions from the observer review, each with the input that broke it."""
-
-    def test_a_damaged_usage_line_loses_nothing(self):
-        self.write("2026-01-01-a.md", note())
-        usage.update(self.vault, [session("/w", assistant=["2026-01-01-a"], sid="w1")], "2026-08-29")
-        log = self.vault / "_meta" / "observer" / "usage.jsonl"
-        log.write_text(log.read_text() + '{"date": "2026-09-27", "note": "trunc\n')
-        usage.update(self.vault, [session("/w", assistant=["2026-01-01-a"], sid="w2")], "2026-08-29")
-        text = log.read_text()
-        self.assertIn('"source": "w1"', text)
-        self.assertIn('"source": "w2"', text)
-        self.assertIn('"note": "trunc', text)
 
     def test_a_note_renamed_into_the_root_makes_the_brief_due(self):
         data = self.tmp / "data"

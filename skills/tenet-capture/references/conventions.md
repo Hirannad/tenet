@@ -84,9 +84,9 @@ real dates, never a literal `{{date}}` *(checked)*.
 ## Evidence versus insight
 
 A finding from research, a tool or an assistant is evidence: it goes in a decision's Why with
-its source named. A `pattern` records only the user's own insight: it is drafted only when the
-user's own words on it are on record, and it keeps them under Where it came from. The model may
-phrase the rule; the user's verdict decides whether it is theirs. This boundary is what lets them
+its source named. A `pattern` records an insight the user has endorsed: the model may phrase
+the rule, the user's own words, when they are on record, stay under Where it came from, and the
+user's verdict decides whether it is theirs. This boundary is what lets them
 tell their thinking apart from what they were handed.
 
 ## Layout and naming

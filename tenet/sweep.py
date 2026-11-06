@@ -5,7 +5,7 @@ import time
 from collections import Counter
 from pathlib import Path
 
-from tenet import ledger, patterns, paths
+from tenet import ledger, paths
 
 
 def _feedback():
@@ -71,8 +71,6 @@ def render(vault):
         targets |= set(ledger.WIKILINK.findall(f.read_text(encoding="utf-8", errors="replace")))
     existing = {p.stem for d in (vault, vault / "_meta", vault / "inbox") for p in ledger.md_files(d)}
     out += [f"  {t}" for t in sorted(targets) if ledger.link_target(t) not in existing]
-
-    out += ["", "--- pattern candidates (decisions that may share an insight) ---", *patterns.render(vault)]
 
     out += ["", "--- process deviations (native auto memory, type: feedback) ---", *_feedback()]
 

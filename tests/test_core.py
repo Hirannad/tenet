@@ -156,6 +156,18 @@ class Sweep(VaultCase):
         self.assertIn("say it once", out)
 
 
+    def test_sweep_has_no_pattern_section(self):
+        self.assertNotIn("pattern candidates", "\n".join(sweep.render(self.vault)))
+
+    def test_template_gitignore_ignores_observer_state_but_not_verdicts(self):
+        target = self.tmp / "fresh"
+        bootstrap.run(target)
+        subprocess.run(["git", "init", "-q", str(target)], check=True)
+        ignored = lambda rel: subprocess.run(["git", "-C", str(target), "check-ignore", "-q", rel]).returncode
+        self.assertEqual(ignored("_meta/observer/x.jsonl"), 0)
+        self.assertEqual(ignored("_meta/observer/verdicts.jsonl"), 1)
+
+
 class Cli(VaultCase):
     def run_cli(self, *args, **env):
         full = {k: v for k, v in os.environ.items() if k not in ("TENET_LEDGER", "CLAUDE_PLUGIN_OPTION_LEDGER")}
@@ -191,6 +203,9 @@ class Cli(VaultCase):
                 with self.assertRaises(SystemExit) as exit_:
                     cli.main([sub, "-h"])
                 self.assertEqual(exit_.exception.code, 0)
+
+    def test_pattern_subcommand_is_gone(self):
+        self.assertEqual(self.run_cli("pattern", "name", "x", TENET_LEDGER=str(self.vault)).returncode, 2)
 
     def test_session_start_hook_covers_clear(self):
         # /clear empties the context, so the brief has to come back with it.

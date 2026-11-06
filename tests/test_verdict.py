@@ -10,8 +10,8 @@ from unittest import mock
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from tenet import cli, paths, promote, verdict  # noqa: E402
-from tenet.observer import pattern_drafts, run  # noqa: E402
-from tests.helpers import HU_PATTERN_TEMPLATE, PATTERN_SPEC, VaultCase, as_agent, note  # noqa: E402
+from tenet.observer import run  # noqa: E402
+from tests.helpers import VaultCase, as_agent, note  # noqa: E402
 
 
 def rec(kind, content, **extra):
@@ -188,49 +188,6 @@ class ReviewFindings(GateBase):
             Path.exists = real_exists
 
 
-class PatternGate(GateBase):
-    """A pattern draft is stated by the session's model before the user is asked about it."""
-
-    def setUp(self):
-        super().setUp()
-        self.write("templates/Pattern Template.md", HU_PATTERN_TEMPLATE)
-        self.write("2026-09-01-a.md", note())
-        self.write("inbox/2026-10-01-pattern-a.md", (
-            '---\ntype: pattern\ncreated: 2026-10-01\nstatus: proposed\nderived:\n  - "[[2026-09-01-a]]"\n---\n\n'
-            f"{pattern_drafts.PENDING}\n\n## Honnan jött\n\n- [[2026-09-01-a]]\n\n> idézet\n\n<!-- pattern-key: abc -->\n"))
-
-    def test_the_pattern_is_stated_first_then_asked_by_its_title(self):
-        payload = self.transcript()
-        text = verdict.gate(payload, self.vault, self.data)
-        self.assertIn("TENET PATTERN", text)
-        self.assertIn(f"- {self.vault / '2026-09-01-a'}.md", text)
-        self.assertNotIn("TENET VERDICT", text)
-        self.assertEqual(verdict.eligible(self.vault), [self.vault / "inbox" / "2026-09-01-draft.md"])
-        pattern_drafts.name(self.vault, "2026-10-01-pattern-a.md", PATTERN_SPEC)
-        text = verdict.gate(payload, self.vault, self.data)  # the next resting point of the same session
-        questions = [q["question"] for q in json.loads(text.split("\n")[2])]
-        self.assertIn("ellenproba ott ahol a szam csuszhat: verdict?", questions)
-        self.assertIsNone(verdict.gate(payload, self.vault, self.data))
-
-    def test_a_statement_that_never_came_is_not_asked_for_twice(self):
-        payload = self.transcript()
-        self.assertIn("TENET PATTERN", verdict.gate(payload, self.vault, self.data))
-        text = verdict.gate(payload, self.vault, self.data)
-        self.assertIn("TENET VERDICT", text)  # the other draft still gets its round, without the pattern
-        self.assertNotIn("pattern-a", text)
-
-    def test_a_lone_pattern_is_stated_at_rest_only(self):
-        (self.vault / "inbox" / "2026-09-01-draft.md").unlink()
-        self.assertIsNone(verdict.gate(self.transcript(work=19), self.vault, self.data))
-        self.assertIn("TENET PATTERN", verdict.gate(self.transcript(), self.vault, self.data))
-
-    def test_the_printed_naming_command_runs_as_printed(self):
-        text = verdict.gate(self.transcript(), self.vault, self.data)
-        script = text[text.index("TENET_LEDGER="):text.index("<<'JSON'\n") + 9] + json.dumps(PATTERN_SPEC) + "\nJSON\n"
-        got = as_agent(script, self.tmp / "home")
-        self.assertIn("PATTERN NAMED: inbox/2026-10-01-ellenproba-ott-ahol-a-szam-csuszhat.md", got.stdout, got.stdout + got.stderr)
-
-
 class Apply(VaultCase):
     def setUp(self):
         super().setUp()
@@ -255,6 +212,11 @@ class Apply(VaultCase):
         out = "\n".join(promote.run(self.vault))
         self.assertIn("2026-09-02-decision.md — whole note:", out)
         self.assertNotIn("2026-09-01-pattern.md", out)
+
+    def test_a_draft_with_the_old_pending_marker_is_an_ordinary_draft(self):
+        # 3.6.1 held such a draft back for a naming round that no longer exists.
+        self.write("inbox/2026-10-01-p.md", note(status="proposed") + "\n<!-- pattern-statement: pending -->\n")
+        self.assertEqual([d.name for d in verdict.eligible(self.vault)], ["2026-10-01-p.md"])
 
     def test_batch_size_follows_the_backlog(self):
         self.assertEqual([verdict.batch_size(b) for b in (0, 1, 2, 5, 6, 11, 12, 33)], [0, 1, 2, 2, 3, 3, 4, 4])

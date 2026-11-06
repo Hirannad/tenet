@@ -1,4 +1,4 @@
-"""Reading session transcripts: what the user asked, where, and what the assistant cited.
+"""Reading session transcripts: what the user asked, and where.
 
 Authorship comes from record fields, never from a model: a prompt is the user's only when
 origin.kind says so, it is not meta, and it is not a harness wrapper."""
@@ -67,11 +67,11 @@ def is_scheduled(records):
 
 
 def read(path):
-    """One session as a dict: cwd, scheduled, human prompts, AskUserQuestion text,
-    touched file paths, and the assistant's own text."""
+    """One session as a dict: cwd, scheduled, human prompts, AskUserQuestion text and
+    touched file paths."""
     records = rows(path)
     s = {"id": Path(path).stem, "cwd": next((r["cwd"] for r in records if r.get("cwd")), ""),
-         "scheduled": is_scheduled(records), "asked": [], "paths": [], "assistant": []}
+         "scheduled": is_scheduled(records), "asked": [], "paths": []}
     for r in records:
         content = (r.get("message") or {}).get("content")
         if r.get("type") != "assistant" or not isinstance(content, list):
@@ -79,9 +79,7 @@ def read(path):
         for b in content:
             if not isinstance(b, dict):
                 continue
-            if b.get("type") == "text":
-                s["assistant"].append(b.get("text", ""))
-            elif b.get("type") == "tool_use":
+            if b.get("type") == "tool_use":
                 args = b.get("input") or {}
                 s["paths"] += [str(args[k]) for k in PATH_KEYS if isinstance(args.get(k), str)]
                 if b.get("name") == "AskUserQuestion":

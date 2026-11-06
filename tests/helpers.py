@@ -7,12 +7,6 @@ import unittest
 from pathlib import Path
 
 HU_TEMPLATE = "---\ntype: decision\n---\n\n## Döntés\n\n## Mikor kell újragondolni\n"
-HU_PATTERN_TEMPLATE = "---\ntype: pattern\n---\n\n## A meglátás\n\n## Hol érvényes\n\n## Hol NEM érvényes\n\n## Honnan jött\n"
-# What the session's model passes to `cli.py pattern name`.
-PATTERN_SPEC = {"title": "Ellenpróba ott, ahol a szám csúszhat",
-                "statement": "Második ellenpróba kör csak ott kell, ahol egy szám csendben elcsúszhat.",
-                "holds": "Ellenőrzéseknél, amelyek egy számot adnak tovább.",
-                "holds_not": "Ahol a hiba hangosan bukik, ott egy kör elég."}
 
 
 def note(kind="decision", status="accepted", decision_words=10, heading="Döntés",
@@ -43,6 +37,9 @@ class VaultCase(unittest.TestCase):
         (self.vault / "_meta" / "maintenance-2026-01-01.md").write_text("---\ntype: meta\n---\n")
         (self.vault / "Methods.md").write_text("# Methods\n")
         self._env = dict(os.environ)
+        # Neither the plugin's data directory nor the real transcripts may reach a test.
+        os.environ["TENET_DATA"] = str(self.tmp / "data")
+        os.environ["CLAUDE_CONFIG_DIR"] = str(self.tmp / "config")
 
     def tearDown(self):
         os.environ.clear()

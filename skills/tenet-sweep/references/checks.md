@@ -55,23 +55,11 @@ elsewhere**, or when it is an **intermediate work product** with no other home.
 
 ## 6. Pattern candidates
 
-Three or more decisions sharing a rationale suggest an undistilled principle. The inventory's
-`pattern candidates` section lists the groups it found (a `related` link plus text overlap, 3-8
-members) with their shared terms; judge each one and word the question. A group is a lead, not a
-finding: drop one that is only a shared topic. The observer separately drafts a pattern when the
-user's own quote exists; that draft arrives in `inbox/`, so do not write one here.
-
-**Propose it as a question. Never write the pattern.**
-
-```
-- These decisions share a rationale: [[A]], [[B]], [[C]]
-  The common thread looks like: <one sentence>
-  Is there a principle here you would state in your own words?
-```
-
-A pattern records the user's own insight. Without their own words on record, authoring one for
-them — however well — replaces their thinking with yours, which is precisely what this vault
-exists to prevent.
+Retired in 3.7.0. The observer no longer groups notes or drafts patterns, and the dump has no
+section for it. A rule you find by reading three notes is an ordinary decision draft through check
+8's slot: the rule under the Decision heading, the notes it rests on and the author's own words,
+when they are on record, under the Why heading of the ledger's Decision template (its third `##`
+heading, in the ledger's language).
 
 ## 7. Topic candidates
 
